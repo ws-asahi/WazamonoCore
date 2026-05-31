@@ -1,5 +1,3 @@
-/* DxCore-style passthrough wrapper. See USBAPI.h for rationale.
- * Copyright (c) 2026 Yusuke Shimizu (Workshop Asahi). SPDX-License-Identifier: MIT */
+/* DxCore-style passthrough wrapper. See USBAPI.h for rationale. */
 #pragma once
 #include "api/PluggableUSB.h"
-#include "usb_ep_types.h"

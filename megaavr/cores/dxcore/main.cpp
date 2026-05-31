@@ -91,6 +91,11 @@ int main() {
   onBeforeInit(); // Emnpty callback called before init but after the .init stuff. First normal code executed
   init(); // Interrupts are turned on just prior to init() returning.
   initVariant();
+/* >>> AVR DU native USB auto-init  ===================================== */
+#if defined(USB0)
+  usb_auto_init();   /* declared in USBSerial.h via Arduino.h chain */
+#endif
+/* <<< AVR DU native USB auto-init ====================================== */
   if (!onAfterInit()) sei();  // enable interrupts.
   setup();
   for (;;) {
