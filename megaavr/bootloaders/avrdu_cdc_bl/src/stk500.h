@@ -36,10 +36,11 @@
 /* AVR64DU32 signature row from datasheet section 33 (Device IDs):
  *   SIGROW.DEVICEID0 = 0x1E
  *   SIGROW.DEVICEID1 = 0x96
- *   SIGROW.DEVICEID2 = 0x22 (DU32)                                    */
+ *   SIGROW.DEVICEID2 = 0x21 (DU32, per datasheet Table 8-4).
+ *   Note: 0x22 is the AVR64DU28 (28-pin) variant.                     */
 #define STK_SIG_BYTE_0  0x1E
 #define STK_SIG_BYTE_1  0x96
-#define STK_SIG_BYTE_2  0x22
+#define STK_SIG_BYTE_2  0x21
 
 void stk500_init(void);
 void stk500_poll(void);  /* called from main loop; non-blocking */

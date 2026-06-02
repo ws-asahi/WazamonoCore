@@ -42,7 +42,7 @@ typedef enum {
 
 static state_t  g_state;
 static uint8_t  g_cmd;
-static uint16_t g_word_addr;    /* current load address (in WORDS)   */
+static uint16_t g_byte_addr;    /* current load address (in BYTES)   */
 static uint8_t  g_args_pending;
 static uint8_t  g_args[20];     /* SET_DEVICE is the longest arg list */
 static uint8_t  g_args_idx;
@@ -160,7 +160,9 @@ static void dispatch(void) {
 
         case STK_LOAD_ADDRESS:
             /* Little-endian word address. */
-            g_word_addr = (uint16_t)g_args[0] | ((uint16_t)g_args[1] << 8);
+            /* AVR Dx/DU: avrdude sends a BYTE address here, not a word
+             * address.  Store it as-is. */
+            g_byte_addr = (uint16_t)g_args[0] | ((uint16_t)g_args[1] << 8);
             reply_insync_ok();
             break;
 
@@ -190,11 +192,13 @@ static void dispatch(void) {
  *  follow before CRC_EOP.
  * ---------------------------------------------------------- */
 static void prog_page_finalise(void) {
-    /* Write the buffer to flash starting at the byte address
-     * derived from g_word_addr (×2).                          */
+    /* Write the buffer to flash at the byte address avrdude loaded
+     * (AVR Dx/DU send byte addresses, so no doubling).         */
     if (g_pp_memtype == 'F' || g_pp_memtype == 'f') {
-        uint32_t byte_addr = (uint32_t)g_word_addr << 1;
-        nvm_write_page(byte_addr, g_page_buf, g_pp_size);
+        /* On AVR Dx/DU, avrdude sends BYTE addresses in STK_LOAD_ADDRESS
+         * (confirmed by DxCore Optiboot_dx "byte addressed!").  Use the
+         * loaded value directly - do NOT double it. */
+        nvm_write_page((uint32_t)g_byte_addr, g_page_buf, g_pp_size);
     }
     /* EEPROM ('E') and other memtypes silently accepted but
      * not actually written in v1. */
@@ -203,7 +207,7 @@ static void prog_page_finalise(void) {
 
 static void read_page_emit(void) {
     put1(STK_INSYNC);
-    uint32_t byte_addr = (uint32_t)g_word_addr << 1;
+    uint32_t byte_addr = (uint32_t)g_byte_addr;
     for (uint16_t i = 0; i < g_pp_size; i++) {
         uint8_t b;
         if (g_pp_memtype == 'F' || g_pp_memtype == 'f') {
@@ -320,9 +324,10 @@ static void feed_byte(uint8_t b) {
  *      values used in g_cmd are routed through ST_WAIT_EOP and handled
  *      at the top of dispatch().                                       ---- */
 
+
 void stk500_init(void) {
     g_state         = ST_IDLE;
-    g_word_addr     = 0;
+    g_byte_addr     = 0;
     g_args_pending  = 0;
     g_args_idx      = 0;
     g_pp_size       = 0;

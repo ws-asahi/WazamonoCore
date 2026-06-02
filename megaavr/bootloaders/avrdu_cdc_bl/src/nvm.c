@@ -41,12 +41,18 @@ static void flash_page_erase(uint32_t byte_addr) {
      * lower 32 KB data-space window.  Section 0 covers 0x0000..0x7FFF,
      * Section 1 covers 0x8000..0xFFFF. */
     uint8_t section = (byte_addr >= 0x8000UL) ? 1 : 0;
-    NVMCTRL.CTRLB = (NVMCTRL.CTRLB & ~NVMCTRL_FLMAP_gm)
-                    | (section << NVMCTRL_FLMAP_gp);
+    /* NVMCTRL.CTRLB is CCP-IOREG protected (datasheet table 11-8).
+     * Compute the new value first, then do the protected write so the
+     * CCP-unlock-and-store sequence stays inside the four-cycle window. */
+    uint8_t new_ctrlb = (NVMCTRL.CTRLB & ~NVMCTRL_FLMAP_gm)
+                        | (section << NVMCTRL_FLMAP_gp);
+    _PROTECTED_WRITE(NVMCTRL.CTRLB, new_ctrlb);
 
-    /* Compute the data-space pointer corresponding to byte_addr. */
+    /* Compute the data-space pointer corresponding to byte_addr.
+     * Per datasheet 8.3 / Table 8-1, Flash is mapped to data space at
+     * 0x8000..0xFFFF, so we OR the low 15 bits of byte_addr with 0x8000. */
     volatile uint8_t *p =
-        (volatile uint8_t *)((uint16_t)(byte_addr & 0x7FFFu));
+        (volatile uint8_t *)(0x8000u | (uint16_t)(byte_addr & 0x7FFFu));
 
     nvm_cmd(NVMCTRL_CMD_FLPER_gc);
     *p = 0xFF;                    /* dummy store triggers erase */
@@ -63,11 +69,12 @@ static void flash_page_write(uint32_t byte_addr,
                              const uint8_t *data,
                              uint16_t nbytes) {
     uint8_t section = (byte_addr >= 0x8000UL) ? 1 : 0;
-    NVMCTRL.CTRLB = (NVMCTRL.CTRLB & ~NVMCTRL_FLMAP_gm)
-                    | (section << NVMCTRL_FLMAP_gp);
+    uint8_t new_ctrlb = (NVMCTRL.CTRLB & ~NVMCTRL_FLMAP_gm)
+                        | (section << NVMCTRL_FLMAP_gp);
+    _PROTECTED_WRITE(NVMCTRL.CTRLB, new_ctrlb);
 
     volatile uint16_t *p =
-        (volatile uint16_t *)((uint16_t)(byte_addr & 0x7FFFu));
+        (volatile uint16_t *)(0x8000u | (uint16_t)(byte_addr & 0x7FFFu));
 
     nvm_cmd(NVMCTRL_CMD_FLWR_gc);
     uint16_t i = 0;
@@ -115,10 +122,11 @@ void nvm_write_page(uint32_t byte_addr,
  * -------------------------------------------------------------------- */
 uint8_t nvm_read_byte(uint32_t byte_addr) {
     uint8_t section = (byte_addr >= 0x8000UL) ? 1 : 0;
-    NVMCTRL.CTRLB = (NVMCTRL.CTRLB & ~NVMCTRL_FLMAP_gm)
-                    | (section << NVMCTRL_FLMAP_gp);
+    uint8_t new_ctrlb = (NVMCTRL.CTRLB & ~NVMCTRL_FLMAP_gm)
+                        | (section << NVMCTRL_FLMAP_gp);
+    _PROTECTED_WRITE(NVMCTRL.CTRLB, new_ctrlb);
 
     volatile const uint8_t *p =
-        (volatile const uint8_t *)((uint16_t)(byte_addr & 0x7FFFu));
+        (volatile const uint8_t *)(0x8000u | (uint16_t)(byte_addr & 0x7FFFu));
     return *p;
 }

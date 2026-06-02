@@ -412,9 +412,23 @@ void usb_min_poll(void) {
  * ============================================================ */
 void usb_min_init(void) {
     /* OSCHF SOF auto-tune so the USB peripheral can lock onto host
-     * frame timing without an external crystal. */
+     * frame timing without an external crystal.
+     *
+     * CRITICAL: ALGSEL must be set to INCR (incremental search) together
+     * with AUTOTUNE=SOF.  Per datasheet, ALGSEL "must be written
+     * simultaneously with writing the SOF setting to the AUTOTUNE bit
+     * field".  ALGSEL=0 (binary search, reset default) "may overshoot
+     * oscillator output frequency up to HALF the tune range", which
+     * corrupts the 48 MHz USB clock mid-enumeration and causes the host
+     * to reject the device.  ALGSEL=1 (incremental) nudges at most 5
+     * tune steps after a reset, keeping the USB clock stable.
+     *
+     * Without this, cold-boot enumeration fails because the factory-
+     * default OSCHF tune is ~+/-2% off and the binary search swings
+     * wildly trying to refine it. */
     uint8_t oschf = CLKCTRL.OSCHFCTRLA;
-    oschf = (oschf & ~CLKCTRL_AUTOTUNE_gm) | CLKCTRL_AUTOTUNE_SOF_gc;
+    oschf &= ~(CLKCTRL_AUTOTUNE_gm | CLKCTRL_ALGSEL_bm);
+    oschf |=  (CLKCTRL_AUTOTUNE_SOF_gc | CLKCTRL_ALGSEL_INCR_gc);
     _PROTECTED_WRITE(CLKCTRL.OSCHFCTRLA, oschf);
 
     /* VUSB regulator: derives the 3.3 V D+ pull-up reference from VDD. */
@@ -437,12 +451,11 @@ void usb_min_init(void) {
     /* Wait for the USB PLL.  Cap the wait so we don't deadlock if
      * the USB clock domain is misconfigured. */
     {
+        /* Wait for PLL48M to lock.  If it doesn't, we have no USB clock
+         * and there is nothing useful we can do here - just keep trying.
+         * (The recovery path is for the user to UPDI-reflash.) */
         uint32_t timeout = 1000000UL;
         while (!(CLKCTRL.USBPLLSTATUS & CLKCTRL_PLLS_bm) && --timeout) { }
-        /* If timeout hit we still try to continue - there's no
-         * watchdog ISR; failing fast is better than hanging the
-         * board.  The next attach will likely fail and the user
-         * recovers via UPDI. */
     }
 
     USB0.CTRLB = 0;     /* GNAUTO/GNAK off; we manage NAK manually. */

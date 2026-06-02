@@ -49,7 +49,7 @@ OBJS := $(SRCS:.c=.o)
 CFLAGS := -mmcu=$(MCU) \
           -DF_CPU=$(F_CPU) \
           -DBOOTLOADER_BUILD=1 \
-          -DAVRDU_BL_MAGIC_ADDR=0x7FFE \
+          \
           -Os \
           -ffunction-sections -fdata-sections \
           -fno-common \

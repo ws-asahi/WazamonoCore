@@ -96,13 +96,11 @@ static volatile bool     s_tx_in_flight = false;
 static volatile uint16_t s_tx_len       = 0;   /* bytes staged in g_bl_ep3_in   */
 
 /* ============================================================
- * Forward decl: implemented in main.c.  Called when the host
- * drops DTR while line coding is 1200 baud - the canonical
- * Arduino Leonardo touch-reset signal.  When we are already in
- * the bootloader, the natural response is to bounce back out
- * (clear the magic so the next boot lands in the app).
+ * Note: bl_exit_via_wdt() is intentionally NOT called from this
+ * file anymore.  The 1200-bps + DTR-fall pattern is the host's
+ * way of saying "enter bootloader"; if we are already here, the
+ * correct reaction is no reaction.
  * ============================================================ */
-__attribute__((noreturn)) void bl_exit_via_wdt(void);
 
 /* ============================================================
  * Class request handler (called from usb_min)
@@ -131,11 +129,12 @@ void cdc_min_handle_class_request(const usb_setup_t *s) {
                            && !(new_state & CDC_CTRL_LINE_DTR);
         s_control_line_state = new_state;
         usb_min_ep0_send_zlp();
-        /* 1200 bps touch reset.  We are already in the bootloader,
-         * so on receipt of the touch we exit back to the app. */
-        if (dtr_falling && s_line_coding.dwDTERate == 1200) {
-            bl_exit_via_wdt();
-        }
+        /* 1200 bps + DTR-fall is the Arduino upload "touch": the host
+         * is telling us to BE in the bootloader so it can upload.  We
+         * are already here, so the correct response is to do nothing
+         * and let avrdude continue with STK500v1 on this same port.
+         * (Earlier versions reset out of BL here, which broke upload.) */
+        (void)dtr_falling;
         break;
     }
 
