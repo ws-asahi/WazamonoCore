@@ -130,3 +130,48 @@ uint8_t nvm_read_byte(uint32_t byte_addr) {
         (volatile const uint8_t *)(0x8000u | (uint16_t)(byte_addr & 0x7FFFu));
     return *p;
 }
+
+/* --------------------------------------------------------------------
+ *  EEPROM erase+write.  Datasheet 11.3.2.3.5 (EEERWR) and 8.6:
+ *    - EEPROM is mapped into data space at 0x1400 (256 B), always
+ *      visible - no FLMAP window needed (it sits below 0x8000).
+ *    - With EEERWR enabled, each ST* erases+writes one byte.
+ *  Sequence (datasheet 11.3): wait not-busy -> CCP(SPM) -> write
+ *  EEERWR to CTRLA -> ST per byte -> NOOP.  CTRLA is SPM-protected,
+ *  matching nvm_cmd() above; STATUS.EEBUSY mirrors FLBUSY.
+ * -------------------------------------------------------------------- */
+#define EE_MAPPED_BASE 0x1400u   /* AVR64DU32 EEPROM mapped address (datasheet 8.6) */
+
+void nvm_write_eeprom(uint16_t ee_addr,
+                      const uint8_t *data,
+                      uint16_t nbytes) {
+    if (ee_addr >= NVM_EEPROM_SIZE) return;
+    if ((uint32_t)ee_addr + nbytes > NVM_EEPROM_SIZE) {
+        nbytes = (uint16_t)(NVM_EEPROM_SIZE - ee_addr);
+    }
+    if (nbytes == 0) return;
+
+    volatile uint8_t *p = (volatile uint8_t *)(EE_MAPPED_BASE + ee_addr);
+
+    /* No NVM op in progress (datasheet 11.5.6 CMDCOLLISION guard). */
+    while (NVMCTRL.STATUS & (NVMCTRL_EEBUSY_bm | NVMCTRL_FLBUSY_bm)) { /* spin */ }
+
+    /* Enable EEPROM erase+write mode (CCP-protected CTRLA write). */
+    CCP = CCP_SPM_gc;             /* 0x9D */
+    NVMCTRL.CTRLA = NVMCTRL_CMD_EEERWR_gc;
+
+    for (uint16_t i = 0; i < nbytes; i++) {
+        p[i] = data[i];           /* each store erases+writes one byte */
+        while (NVMCTRL.STATUS & NVMCTRL_EEBUSY_bm) { /* spin */ }
+    }
+
+    CCP = CCP_SPM_gc;
+    NVMCTRL.CTRLA = NVMCTRL_CMD_NOOP_gc;
+}
+
+uint8_t nvm_read_eeprom(uint16_t ee_addr) {
+    if (ee_addr >= NVM_EEPROM_SIZE) return 0xFF;
+    volatile const uint8_t *p =
+        (volatile const uint8_t *)(EE_MAPPED_BASE + ee_addr);
+    return *p;
+}

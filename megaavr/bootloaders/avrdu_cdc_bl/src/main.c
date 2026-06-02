@@ -158,13 +158,11 @@ static void bl_dbltap_window(void) {
  *  app's own interrupt handlers in APPCODE are reachable.
  * -------------------------------------------------------------------- */
 static inline void vectors_to_boot(void) {
-    CCP = CCP_IOREG_gc;
-    CPUINT.CTRLA |= CPUINT_IVSEL_bm;
+    _PROTECTED_WRITE(CPUINT.CTRLA, CPUINT.CTRLA | CPUINT_IVSEL_bm);
 }
 
 static inline void vectors_to_app(void) {
-    CCP = CCP_IOREG_gc;
-    CPUINT.CTRLA &= (uint8_t)~CPUINT_IVSEL_bm;
+    _PROTECTED_WRITE(CPUINT.CTRLA, CPUINT.CTRLA & (uint8_t)~CPUINT_IVSEL_bm);
 }
 
 /* --------------------------------------------------------------------

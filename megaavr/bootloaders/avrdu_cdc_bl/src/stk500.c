@@ -124,10 +124,10 @@ static void dispatch(void) {
              * arduino programmer mode. */
             uint8_t param = g_args[0];
             uint8_t value;
-            if      (param == 0x80) { value = 1;  } /* HW VER major */
-            else if (param == 0x81) { value = 8;  } /* SW VER major */
-            else if (param == 0x82) { value = 2;  } /* SW VER minor */
-            else                     { value = 0;  }
+            if      (param == 0x80) { value = 1;    } /* HW VER major */
+            else if (param == 0x81) { value = 8;    } /* SW VER major */
+            else if (param == 0x82) { value = 2;    } /* SW VER minor */
+            else                     { value = 0x03; } /* generic; matches optiboot_dx */
             reply_insync_x_ok(value);
             break;
         }
@@ -192,16 +192,18 @@ static void dispatch(void) {
  *  follow before CRC_EOP.
  * ---------------------------------------------------------- */
 static void prog_page_finalise(void) {
-    /* Write the buffer to flash at the byte address avrdude loaded
-     * (AVR Dx/DU send byte addresses, so no doubling).         */
+    /* Write the buffer at the byte address avrdude loaded (AVR Dx/DU
+     * send byte addresses, so no doubling - same for flash and EEPROM). */
     if (g_pp_memtype == 'F' || g_pp_memtype == 'f') {
         /* On AVR Dx/DU, avrdude sends BYTE addresses in STK_LOAD_ADDRESS
          * (confirmed by DxCore Optiboot_dx "byte addressed!").  Use the
          * loaded value directly - do NOT double it. */
         nvm_write_page((uint32_t)g_byte_addr, g_page_buf, g_pp_size);
+    } else if (g_pp_memtype == 'E' || g_pp_memtype == 'e') {
+        /* EEPROM byte offset, same byte-addressing convention as flash. */
+        nvm_write_eeprom(g_byte_addr, g_page_buf, g_pp_size);
     }
-    /* EEPROM ('E') and other memtypes silently accepted but
-     * not actually written in v1. */
+    /* Other memtypes are acknowledged without action. */
     reply_insync_ok();
 }
 
@@ -212,6 +214,8 @@ static void read_page_emit(void) {
         uint8_t b;
         if (g_pp_memtype == 'F' || g_pp_memtype == 'f') {
             b = nvm_read_byte(byte_addr + i);
+        } else if (g_pp_memtype == 'E' || g_pp_memtype == 'e') {
+            b = nvm_read_eeprom((uint16_t)(g_byte_addr + i));
         } else {
             b = 0xFF;
         }

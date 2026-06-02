@@ -38,4 +38,23 @@ void nvm_write_page(uint32_t byte_addr,
  * arduino programmer uses for verify passes.                         */
 uint8_t nvm_read_byte(uint32_t byte_addr);
 
+/* --------------------------------------------------------------------
+ *  EEPROM (datasheet 11.3.2.3.5 EEERWR, 8.6 mapped at 0x1400, 256 B).
+ *
+ *  Addressing: this bootloader uses the DxCore/Optiboot_dx convention
+ *  where avrdude sends BYTE addresses in STK_LOAD_ADDRESS for every
+ *  memory.  So `ee_addr` is the byte offset into EEPROM (0..255),
+ *  taken straight from g_byte_addr - no scaling, exactly like flash.
+ * -------------------------------------------------------------------- */
+#define NVM_EEPROM_SIZE 256u
+
+/* Erase+write `nbytes` into EEPROM from byte offset `ee_addr`.
+ * Out-of-range requests are clamped/ignored.                         */
+void nvm_write_eeprom(uint16_t ee_addr,
+                      const uint8_t *data,
+                      uint16_t nbytes);
+
+/* Read one EEPROM byte at offset `ee_addr` (0..255).                 */
+uint8_t nvm_read_eeprom(uint16_t ee_addr);
+
 #endif  /* AVRDU_BL_NVM_H */
