@@ -17,9 +17,7 @@
  *      IF 0   CDC Communication
  *      IF 1   CDC Data
  *
- *    VID / PID = 0x1209 / 0xDA33  (pid.codes test PID, one more than
- *                                   the runtime's 0xDA32 so the host
- *                                   distinguishes the two)
+ *    VID / PID = 0x1209 / 0x0001  (pid.codes test PID)
  */
 #ifndef AVRDU_BL_USB_DESC_H
 #define AVRDU_BL_USB_DESC_H
@@ -28,7 +26,7 @@
 
 /* Identity */
 #define USB_BL_VID              0x1209
-#define USB_BL_PID              0xDA33
+#define USB_BL_PID              0x0001
 #define USB_BL_DEVICE_VER       0x0100
 
 /* Endpoints */

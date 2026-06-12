@@ -420,7 +420,7 @@ static const uint8_t A31 = PIN_A31;
   #define USB_VID                0x1209
 #endif
 #ifndef USB_PID
-  #define USB_PID                0xDA32
+  #define USB_PID                0x0002
 #endif
 #ifndef USB_MANUFACTURER
   #define USB_MANUFACTURER       "DxCore"

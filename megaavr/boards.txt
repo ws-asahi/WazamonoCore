@@ -4129,16 +4129,15 @@ avrdbopti.menu.flmap.locksection1.build.flmapabr=.fl1
 avrdbopti.menu.flmap.locksection0.build.flmapabr=.fl0
 
 
-
 ##########################################################################
 #                                                                        #
-#   ###  #     # ####      ####  #   #          #   #   ###   ####       #
-#  #   # #     # #   #     #   # #   #          #   #  #      #   #      #
-#  #####  #   #  ####  ### #   # #   #          #   #   ###   ####       #
-#  #   #   # #   # #       #   # #   #          #   #      #  #   #      #
-#  #   #    #    #  #      ####   ###            ###    ###   ####       #
-#________________________________________________________________________#
-#                                        #
+#   ###  #     # ####      ####  ####            ###          #          #
+#  #   # #     # #   #     #   # #   #          #   #        ###  ##     #
+#  #####  #   #  ####  ### #   # #   #          #   #  ###    #          #
+#  #   #   # #   # #       #   # #   #          #   #  #  #   #   ##     #
+#  #   #    #    #  #      ####  ####            ###   ###    #   ##     #
+#______________________________________________________#_________________#
+#                                        #             #
 # Parameters and defaults for DD parts   #
 #________________________________________#
 avrddopti.build.board=avrdd
@@ -4714,14 +4713,21 @@ avrddopti.menu.flmap.locksection0.build.flmapabr=.fl0
 
 ##########################################################################
 #                                                                        #
-#   ###  #     # ####      #####  ####           ###          #          #
-#  #   # #     # #   #     #      #   #         #   #        ###  ##     #
-#  #####  #   #  ####  ### ####   ####          #   #  ###    #          #
-#  #   #   # #   # #       #      #   #         #   #  #  #   #   ##     #
-#  #   #    #    #  #      #####  ####           ###   ###    #   ##     #
-#______________________________________________________#_________________#
+#   ###  #     # ####      ####  #   #          #   #   ###   ####       #
+#  #   # #     # #   #     #   # #   #          #   #  #      #   #      #
+#  #####  #   #  ####  ### #   # #   #          #   #   ###   ####       #
+#  #   #   # #   # #       #   # #   #          #   #      #  #   #      #
+#  #   #    #    #  #      ####   ###            ###    ###   ####       #
+#________________________________________________________________________#
 avrduusb.upload.tool=avrdude
 avrduusb.upload.prog_interlock=
+# USB identification for "Get Board Info" (BN). The running sketch enumerates
+# as the application CDC (0x1209:0x0002); in bootloader mode it enumerates as
+# usbcdcboot (0x1209:0x0001). Register both so the board is recognized either way.
+avrduusb.vid.0=0x1209
+avrduusb.pid.0=0x0002
+avrduusb.vid.1=0x1209
+avrduusb.pid.1=0x0001
 avrduusb.build.board=avrdu
 avrduusb.build.core=dxcore
 avrduusb.upload.maximum_size=0
@@ -4729,7 +4735,7 @@ avrduusb.upload.maximum_data_size=0
 avrduusb.build.f_cpu={build.speed}000000L
 avrduusb.build.text_section_start=.text=0x1000
 avrduusb.build.defaultswaps=
-avrduusb.build.extra_flags= {build.defaultswaps} -DUSING_AVRDU_CDC_BOOTLOADER -DUSING_OPTIBOOT -DUSB_PID=0xDA33
+avrduusb.build.extra_flags= {build.defaultswaps} -DUSING_AVRDU_CDC_BOOTLOADER -DUSING_OPTIBOOT
 avrduusb.build.export_merged_output=false
 avrduusb.build.highestcb=B2
 avrduusb.build.printf=
@@ -4993,14 +4999,9 @@ avrduusb.menu.chip.avr16du14.upload.maximum_size=12288
 avrduusb.menu.chip.avr16du14.upload.maximum_data_size=2048
 avrduusb.menu.chip.avr16du14.build.highestcb=B1
 avrduusb.menu.chip.avr16du14.build.variant=14pin-duseries
-
 avrduusb.menu.chip.avr16du14.build.defaultswaps=-DMUX_DEFAULT_USART1=2
 avrduusb.bootloader.file={runtime.platform.path}/bootloaders/hex/{bootloader.class}.hex
 avrduusb.bootloader.appspm=
-avrduusb.vid.0=0x1209
-avrduusb.pid.0=0xDA32
-avrduusb.vid.1=0x1209
-avrduusb.pid.1=0xDA33
 
 ########################################################################################################
 #                                                                                                      #

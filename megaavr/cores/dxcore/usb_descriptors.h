@@ -18,7 +18,7 @@
  *    IF 3   HID Mouse
  *    IF 4   HID Gamepad
  *
- *  VID/PID: pid.codes test PID (0x1209:0xDA32)
+ *  VID/PID: pid.codes test PID (0x1209:0x0002)
  */
 #ifndef USB_DESCRIPTORS_H
 #define USB_DESCRIPTORS_H
@@ -38,7 +38,7 @@ extern "C" {
   #define USB_VID               0x1209
 #endif
 #ifndef USB_PID
-  #define USB_PID               0xDA32
+  #define USB_PID               0x0002
 #endif
 #define USB_DEVICE_VER          0x0100
 
