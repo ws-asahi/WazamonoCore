@@ -4993,9 +4993,14 @@ avrduusb.menu.chip.avr16du14.upload.maximum_size=12288
 avrduusb.menu.chip.avr16du14.upload.maximum_data_size=2048
 avrduusb.menu.chip.avr16du14.build.highestcb=B1
 avrduusb.menu.chip.avr16du14.build.variant=14pin-duseries
+
 avrduusb.menu.chip.avr16du14.build.defaultswaps=-DMUX_DEFAULT_USART1=2
 avrduusb.bootloader.file={runtime.platform.path}/bootloaders/hex/{bootloader.class}.hex
 avrduusb.bootloader.appspm=
+avrduusb.vid.0=0x1209
+avrduusb.pid.0=0xDA32
+avrduusb.vid.1=0x1209
+avrduusb.pid.1=0xDA33
 
 ########################################################################################################
 #                                                                                                      #
