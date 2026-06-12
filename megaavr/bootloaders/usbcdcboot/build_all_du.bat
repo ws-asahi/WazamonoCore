@@ -1,19 +1,25 @@
-
 @echo off
 setlocal
 pushd "%~dp0"
 REM ============================================================
 REM  build_all_du.bat   (cmd-native, ASCII-only auto-detect)
-REM  Builds the USB CDC bootloader for every AVR DU device as
-REM  usbcdcboot_<chip>.hex  (optiboot-style naming) and collects
-REM  them into  ..\hex\  (alongside optiboot_*.hex).
-REM  Put this in  DxCore\megaavr\bootloaders\usbcdcboot\  and run it.
+REM  Builds the USB CDC bootloader as FIVE LED/flash-size classes
+REM  (optiboot dd/dd14-style) and collects them into  ..\hex\ :
 REM
-REM  Chip list below uses the bare tag (no "avr"); each build sets
-REM  MCU=avr<tag> and TARGET=usbcdcboot_<tag>, so the hex is named to
-REM  match boards.txt:  avrduusb.bootloader.class=usbcdcboot_<tag>.
-REM  Cleans with 'del' and runs 'make all' only (avoids rm/awk); the
-REM  link step still prints section sizes via avr-size -A.
+REM    class        LED   covers                compiled with
+REM    -----------  ----  --------------------  -------------
+REM    16du         PA7   16du20/28/32          avr16du32
+REM    16du14       PD6   16du14                avr16du14
+REM    32du         PA7   32du20/28/32          avr32du32
+REM    32du14       PD6   32du14                avr32du14
+REM    64du         PA7   64du28/32             avr64du32
+REM
+REM  The signature is read from SIGROW at runtime (stk500.c), so one
+REM  class hex serves every package that shares its flash size -- the
+REM  bootloader always reports the true DEVICEID to avrdude.
+REM  main.c defaults the LED to PA7; the 14-pin classes pass
+REM  LED_PORT=PORTD LED_PIN=6 to move it to PD6 (no PA7 on 14-pin).
+REM  Put this in  DxCore\megaavr\bootloaders\usbcdcboot\  and run it.
 REM ============================================================
 
 REM --- find avr-gcc: 5 levels up (Arduino\tools), version auto-detected
@@ -30,18 +36,14 @@ if not exist "%GCCBIN%\avr-gcc.exe" (
   popd & exit /b 1
 )
 set "PATH=%GCCBIN%;%PATH%"
-if not defined MAKE set MAKE=make.exe
+if not defined MAKE set MAKE=make
 
-call :build 16du14
-call :build 16du20
-call :build 16du28
-call :build 16du32
-call :build 32du14
-call :build 32du20
-call :build 32du28
-call :build 32du32
-call :build 64du28
-call :build 64du32
+REM            class    mcu         LEDport LEDpin
+call :build 16du     avr16du32
+call :build 16du14   avr16du14   PORTD   6
+call :build 32du     avr32du32
+call :build 32du14   avr32du14   PORTD   6
+call :build 64du     avr64du32
 
 echo.
 echo === collecting hex files into ..\hex\ ===
@@ -56,9 +58,10 @@ endlocal
 goto :eof
 
 :build
+REM  %1=class tag   %2=mcu   %3=LED port (opt)   %4=LED pin (opt)
 echo.
-echo ------ building avr%1  to  usbcdcboot_%1.hex ------
+echo ------ building %2  -^> usbcdcboot_%1.hex  (LED %3 %4) ------
 del /q src\*.o 2>nul
 del /q usbcdcboot_%1.elf usbcdcboot_%1.hex usbcdcboot_%1.lst usbcdcboot_%1.map 2>nul
-"%MAKE%" MCU=avr%1 TARGET=usbcdcboot_%1 all
+"%MAKE%" MCU=%2 TARGET=usbcdcboot_%1 LED_PORT=%3 LED_PIN=%4 all
 goto :eof

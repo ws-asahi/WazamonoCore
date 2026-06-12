@@ -1,5 +1,5 @@
 /*
- * usbcdcboot/src/stk500.h
+ * avrdu_cdc_bl/src/stk500.h
  * --------------------------------------------------------------------
  *  Clean-room implementation.  Reference: Atmel AVR061 - "STK500
  *  Communication Protocol" application note (publicly published by
@@ -33,7 +33,9 @@
 #define STK_READ_PAGE       0x74
 #define STK_READ_SIGN       0x75
 
-/* AVR64DU32 signature row from datasheet section 33 (Device IDs):
+/* AVR64DU32 signature row from datasheet section 33 (Device IDs).
+ * Reference value only: STK_READ_SIGN now reports SIGROW.DEVICEID0..2
+ * read at runtime, so the same hex serves all variants of a build class.
  *   SIGROW.DEVICEID0 = 0x1E
  *   SIGROW.DEVICEID1 = 0x96
  *   SIGROW.DEVICEID2 = 0x21 (DU32, per datasheet Table 8-4).

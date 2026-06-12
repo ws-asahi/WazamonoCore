@@ -1,7 +1,8 @@
-# usbcdcboot/Makefile
+# avrdu_cdc_bl/Makefile
 # --------------------------------------------------------------------
 #   Build rules for the AVRDU CDC bootloader.
-#   Produces usbcdcboot_64du32.hex, .elf, .lst, .map.
+#   Produces usbcdcboot_64du.hex, .elf, .lst, .map (one hex per build
+#   class; see build_all_du.bat for the 16du/16du14/32du/32du14/64du set).
 #
 #   Usage from inside this directory:
 #
@@ -17,7 +18,7 @@
 
 MCU      := avr64du32
 F_CPU    := 24000000UL
-TARGET   := usbcdcboot_64du32
+TARGET   := usbcdcboot_64du
 BOOT_BASE := 0x0000
 BOOTSIZE  := 4096           # bytes reserved for the bootloader (BOOTSIZE fuse * 512)
 
@@ -57,6 +58,19 @@ CFLAGS := -mmcu=$(MCU) \
           -Wall -Wextra -Wstrict-prototypes \
           -std=gnu11 \
           -Isrc
+
+# --- LED pin override (per-build) ------------------------------------
+# main.c defaults the DFU LED to PA7 (present on 20/28/32-pin DU).  The
+# 14-pin DU has no PA7, so its build classes pass LED_PORT/LED_PIN to move
+# the LED to PD6, e.g.:  make ... LED_PORT=PORTD LED_PIN=6
+# (Kept as plain tokens -- no spaces/parens -- so Windows cmd passes them
+# through cleanly.)
+ifneq ($(strip $(LED_PORT)),)
+CFLAGS += -DBL_LED_PORT=$(LED_PORT)
+endif
+ifneq ($(strip $(LED_PIN)),)
+CFLAGS += -DBL_LED_PIN=$(LED_PIN)
+endif
 
 # The toolchain's specs-avr64du32 file handles the avrxmega2 paths
 # automatically when -mmcu=avr64du32 is set, so we don't need any

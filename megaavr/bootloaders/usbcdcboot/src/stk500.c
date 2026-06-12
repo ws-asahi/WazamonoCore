@@ -1,5 +1,5 @@
 /*
- * usbcdcboot/src/stk500.c
+ * avrdu_cdc_bl/src/stk500.c
  * --------------------------------------------------------------------
  *  Clean-room implementation.  Reference: Atmel AVR061 STK500
  *  Communication Protocol application note (publicly published).
@@ -173,10 +173,16 @@ static void dispatch(void) {
             break;
 
         case STK_READ_SIGN:
+            /* Report the running device's signature read live from SIGROW
+             * (datasheet sec. 33 Device IDs), not a build-time constant,
+             * so one per-class hex serves every package/flash-size variant
+             * sharing this build's RAM layout: avrdude always sees the true
+             * DEVICEID of the chip it is talking to (cf. STK_SIG_BYTE_* in
+             * stk500.h, kept only as the AVR64DU32 reference value). */
             put1(STK_INSYNC);
-            put1(STK_SIG_BYTE_0);
-            put1(STK_SIG_BYTE_1);
-            put1(STK_SIG_BYTE_2);
+            put1(SIGROW.DEVICEID0);
+            put1(SIGROW.DEVICEID1);
+            put1(SIGROW.DEVICEID2);
             put1(STK_OK);
             break;
 

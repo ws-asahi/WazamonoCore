@@ -1,5 +1,5 @@
 /*
- * usbcdcboot/src/main.c
+ * avrdu_cdc_bl/src/main.c
  * --------------------------------------------------------------------
  *  Clean-room implementation.  References:
  *    - AVR64DU32 datasheet (Microchip DS40002676A or later)
@@ -57,7 +57,7 @@
 static volatile uint16_t s_dbltap_flag __attribute__((section(".noinit")));
 
 /* --------------------------------------------------------------------
- *  DFU-mode LED indicator (Curiosity Nano: PF2, active LOW)
+ *  DFU-mode LED indicator (default PA7, active LOW)
  *
  *  The LED is driven only while the bootloader is in its "stay" loop, so
  *  the user can see at a glance whether the chip is in BL mode or running
@@ -68,12 +68,26 @@ static volatile uint16_t s_dbltap_flag __attribute__((section(".noinit")));
  *  This is the equivalent of the Caterina/Pro-Micro pulse pattern, but
  *  much simpler: just a counter-driven OUTTGL, no timer needed.
  *
- *  PF2 on the Curiosity Nano EV59F82A is wired to the on-board LED0,
- *  cathode side, so driving the pin LOW lights the LED.  See
- *  AVR64DU32_Curiosity_Nano user guide section 4.2 (LED0).
+ *  Default pin is PA7, matching DxCore's optiboot LED convention
+ *  (LED=A7) for the parts that have it: the 20/28/32-pin DU packages.
+ *  The 14-pin DU (16/32DU14) has no PA7, so those builds override the
+ *  pin to PD6 -- the same split optiboot uses for its *dd vs *dd14
+ *  classes.  There is no PD4 fallback as in optiboot's 14-pin UART
+ *  case: this is a USB bootloader, so the LED never collides with a
+ *  UART pin position.  Active LOW: drive the pin LOW to light the LED;
+ *  if your board's LED is active HIGH, swap OUTCLR/OUTSET in
+ *  bl_led_on()/bl_led_off_state() below.  Override the pin at build
+ *  time with -DBL_LED_PORT=PORTx -DBL_LED_PIN=n, e.g. PD6 for a 14-pin
+ *  DU (-DBL_LED_PORT=PORTD -DBL_LED_PIN=6) or PF2 for the Curiosity
+ *  Nano LED0 (-DBL_LED_PORT=PORTF -DBL_LED_PIN=2).
  * -------------------------------------------------------------------- */
-#define BL_LED_PORT          PORTF
-#define BL_LED_PIN_BM        (1u << 2)
+#ifndef BL_LED_PORT
+#define BL_LED_PORT          PORTA
+#endif
+#ifndef BL_LED_PIN
+#define BL_LED_PIN           7
+#endif
+#define BL_LED_PIN_BM        (1u << BL_LED_PIN)
 
 static uint16_t s_led_period_counts;   /* main-loop iters per toggle */
 
@@ -138,7 +152,7 @@ static void bl_dbltap_window(void) {
         bl_wait_ms_4mhz(25);
     }
     BL_LED_PORT.OUTSET = BL_LED_PIN_BM;   /* off */
-    BL_LED_PORT.DIRCLR = BL_LED_PIN_BM;   /* release PF2 for the application */
+    BL_LED_PORT.DIRCLR = BL_LED_PIN_BM;   /* release the LED pin for the application */
 }
 
 /* ----- WDT timeout we ask the silicon to apply when leaving prog mode ----- */
@@ -230,7 +244,7 @@ static void jump_to_app(void) {
     /* Disable interrupts; the app re-enables them when ready. */
     cli();
 
-    /* Turn the DFU LED off and release PF2 back to input so the app sees
+    /* Turn the DFU LED off and release the LED pin back to input so the app sees
      * a clean GPIO state (and the LED doesn't stick "on" mid-startup). */
     bl_led_deinit();
 
@@ -270,7 +284,7 @@ static void jump_to_app(void) {
 __attribute__((noreturn))
 void bl_exit_via_wdt(void) {
     /* LED off and pin released. The chip is about to WDT-reset and the
-     * post-reset app will configure PF2 as it wishes. The WDT reset sets
+     * post-reset app will configure the LED pin as it wishes. The WDT reset sets
      * WDRF (not SWRF), so the next boot runs the freshly uploaded app. */
     bl_led_deinit();
 
