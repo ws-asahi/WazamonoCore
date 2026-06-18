@@ -107,7 +107,7 @@ static cdc_line_coding_t g_line_coding = {
     .bDataBits   = 8
 };
 
-static uint8_t g_control_line_state = 0;   /* DTR/RTS */
+static uint8_t volatile  g_control_line_state = 0;   /* DTR/RTS */
 static bool    g_pending_set_line_coding = false;
 
 /* ============================================================

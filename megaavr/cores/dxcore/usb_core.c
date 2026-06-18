@@ -55,9 +55,9 @@ volatile uint8_t g_dbg_ep0out_status = 0;
 volatile uint8_t g_dbg_ep0in_status  = 0;
 volatile uint8_t g_dbg_intflagsb     = 0;
 volatile uint8_t g_dbg_usbaddr       = 0;
-uint8_t      g_pending_address     = 0;
-uint8_t      g_current_configuration = 0;
-uint8_t      g_remote_wakeup_enabled = 0;
+uint8_t          g_pending_address   = 0;
+volatile uint8_t g_current_configuration = 0;
+uint8_t          g_remote_wakeup_enabled = 0;
 
 volatile uint16_t g_reset_count          = 0;
 volatile uint16_t g_setup_count          = 0;

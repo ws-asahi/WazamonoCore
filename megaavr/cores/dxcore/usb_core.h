@@ -82,7 +82,7 @@ extern uint8_t  g_ep3_in_buf[USB_EP3_SIZE];   /* CDC data TX          */
 
 extern ctrl_state_t g_ctrl_state;
 extern uint8_t  g_pending_address;
-extern uint8_t  g_current_configuration;
+extern volatile uint8_t  g_current_configuration;
 extern uint8_t  g_remote_wakeup_enabled;
 
 /* Diagnostic counters */
