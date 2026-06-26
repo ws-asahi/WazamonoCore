@@ -35,16 +35,14 @@ Wazamono シリーズは全機種が **AVR64DU32** を採用しています。US
 | SRAM | 8 KB |
 | EEPROM | 256 B |
 | 最大動作周波数 | 24 MHz |
-| **USB** | USB 2.0 Full-Speed **デバイス**（16 エンドポイントアドレス／最大 32 エンドポイント） |
-| ADC | 10-bit 170 ksps × 1（32 ピン版で 21 チャネル） |
-| DAC | なし（AC 内部の DACREF のみ） |
-| タイマ | TCA0 ×1（PWM 3ch）、TCB ×2 ／ **TCD は USB が占有するため非搭載** |
+| **USB** | USB 2.0 Full-Speed **デバイス**（入出力 16 / 16 エンドポイント） |
+| ADC | 10-bit 170 ksps × 1（21 チャネル） |
+| タイマ | TCA0 ×1（PWM 3ch）、TCB ×2  |
 | USART | 2（USART0 / USART1） |
 | SPI / TWI(I2C) | 各 1 |
 | CCL（LUT） | 4 |
 | イベントシステム | 6 チャネル |
 | アナログコンパレータ（AC） | 1 |
-| OPAMP | なし |
 | パッケージ | 32 ピン（TQFP 7×7 / VQFN 5×5） |
 
 <sub>諸元はデータシート DS40002548A（AVR64DU32）に基づく。AVR16DU32 / AVR32DU32 は Flash・SRAM のみ異なります。</sub>
@@ -53,11 +51,15 @@ Wazamono シリーズは全機種が **AVR64DU32** を採用しています。US
 
 ## 特長
 
-- **USB ネイティブ** — 追加の USB-シリアル変換チップが不要。`Serial` がそのまま USB CDC 仮想シリアルポートになります。
-- **USB ブートローダ** — USB CDC（STK500v1）経由でスケッチを書き込み。**1200bps タッチ**でブートローダへ自動遷移するため、Arduino Leonardo / Pro Micro と同じ手順で書き込めます。
+- **基礎性能の向上** — 動作クロック1.5倍、プログラム容量約2倍、（※EEPROM容量は1KBから256Bへ減少）
+- **USB ネイティブ** — 追加の USB-シリアル変換チップが不要。`Serial` がそのまま USB仮想シリアルポートになります。
+- **USB ブートローダ** — USB-CDC（STK500v1）経由でスケッチを書き込み。**1200bps タッチ**でブートローダへ自動遷移するため、Leonardo / ProMicro と同じ手順で書き込めます。
 - **HID / MIDI 対応** — USB キーボード・マウス等の HID、および USB-MIDI をサポート。
-- **`swap()` 指定不要** — Wazamono の各ボードは UART のピン割り当てが variant 側で確定済み。スケッチで `Serial1.swap()` 等を呼ぶ必要はありません。
-- **製品専用に最小化** — DxCore から Wazamono シリーズ以外のボード／MCU 定義を取り除き、メニューを製品向けに固定。迷わず選べます。
+- **高い互換性** — 同系統のMCUを採用しているためUnoR3やLeonardo / ProMicroのコードをほぼそのまま実装可能（一部ピン配列の変更や未対応のライブラリあり）。
+- **各ピンの出力能力** — ピンあたりの電流出力は20mAを維持しており、UnoR4では8mAでは動かせない外部機器も動作可能。
+- **全ピンアナログ入力対応** — 全てのデジタル入出力ピンでアナログ値の読取りが可能。
+- **7系統のPWM出力** — UnoR3では6本だったPWMを7本に拡張
+- **UPDI対応** — UPDIデバッガーなどで動作中のMCUにアクセス可能
 
 ---
 
@@ -84,7 +86,7 @@ Wazamono シリーズは全機種が **AVR64DU32** を採用しています。US
 ### 必要環境
 
 - Arduino IDE 1.8.13 以降、または 2.x
-- 初回のみ、UPDI プログラマ（PICkit 4/5、Atmel-ICE、jtag2updi 等）でブートローダの書き込みが必要になる場合があります。
+- ブートローダーの書き換えにはUPDI プログラマ（PICkit 4/5、Atmel-ICE、jtag2updi 等）が必要になります。
 
 > Linux をお使いの場合、Arduino IDE は必ず [arduino.cc](https://www.arduino.cc) 配布版を使用してください。ディストリのパッケージマネージャ版は改変されており、正常に動作しません。
 
@@ -117,36 +119,6 @@ void loop() {
   delay(1000);
 }
 ```
-
----
-
-## シリアルポート構成（Wazamono Tachi）
-
-Arduino Leonardo / Pro Micro と同じ「**`Serial` = USB**」方式です。
-
-| オブジェクト | 実体 | ピン | 用途 |
-|--------------|------|------|------|
-| `Serial` | USB CDC | USB-C | シリアルモニタ（仮想 COM ポート） |
-| `Serial1` | USART1 | D0(RX) / D1(TX) | Pro Micro 互換のハードウェア UART |
-| `Serial2` | USART0 | D2(SDA) / D3(SCL) | 予備 UART（I2C とピン共有・**排他利用**） |
-
-> `Serial2` は I2C（`Wire`）とピンを共有します。どちらか一方のみ使用できます。
-
----
-
-## 主要ペリフェラルのピン（Wazamono Tachi）
-
-| 機能 | ピン |
-|------|------|
-| I2C | SDA = D2(PA2) / SCL = D3(PA3) |
-| SPI | MOSI = D16(PA4) / MISO = D14(PA5) / SCK = D15(PA6) / SS = D4(PA7) |
-| PWM | D5–D10（TCA0）、D3（TCB1） |
-| アナログ入力 | A0–A3、A6–A10、追加チャネル A30–A38 |
-| LED_BUILTIN | D17（オンボード RX LED） |
-
-ピン配置の詳細は各ボードのドキュメントを参照してください。
-
-- [Wazamono Tachi ボードドキュメント](megaavr/extras/WazamonoTachi.md)
 
 ---
 
