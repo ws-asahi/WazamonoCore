@@ -38,10 +38,31 @@
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 
-/* Pro Micro (classic-AVR) <avr/wdt.h> compatibility for the AVR DU watchdog.
- * Must be included here so it pulls in <avr/wdt.h> and re-maps wdt_enable()/
- * WDTO_* before the sketch's own "#include <avr/wdt.h>" is reached. */
-#include "wdt_compat.h"
+/* AVR DU watchdog.  avr-libc's <avr/wdt.h> (with WDT fixes #1068/#1069) now
+ * provides correct wdt_enable()/wdt_disable()/wdt_reset() and the classic
+ * WDTO_* timeout constants directly, so no WDT compatibility shim is needed.
+ * Included here so WDT functions are available to sketches via Arduino.h. */
+#include <avr/wdt.h>
+
+/* Pro Micro / classic-AVR watchdog-reset detection (MCUSR / WDRF idiom).
+ * NOT provided by <avr/wdt.h>.  The modern AVR keeps the reset cause in
+ * RSTCTRL.RSTFR; the core's init (.init3) stashes it into GPIOR0, so alias
+ * the classic MCUSR there and map the flag names to the RSTFR bit positions. */
+#if defined(RSTCTRL) && !defined(MCUSR)
+  #define MCUSR  GPIOR0
+  #ifndef PORF
+    #define PORF   RSTCTRL_PORF_bp      /* power-on reset             */
+  #endif
+  #ifndef BORF
+    #define BORF   RSTCTRL_BORF_bp      /* brown-out reset            */
+  #endif
+  #ifndef EXTRF
+    #define EXTRF  RSTCTRL_EXTRF_bp     /* external (RESET pin) reset  */
+  #endif
+  #ifndef WDRF
+    #define WDRF   RSTCTRL_WDRF_bp      /* watchdog reset             */
+  #endif
+#endif
 
 
 
@@ -451,14 +472,19 @@ F     b7  f07 f17 | D1  MUX  7  |         f27 f37     E0F A07
   #define INTERNAL4V096            ((VREF_REFSEL_4V096_gc << 4) | (VREF_REFSEL_4V096_gc ))     /* 2    */
   #define INTERNAL2V5              ((VREF_REFSEL_2V500_gc << 4) | (VREF_REFSEL_2V500_gc ))     /* 3    */
   #define VDD                      ((VREF_REFSEL_VDD_gc   << 4) | (VREF_REFSEL_VDD_gc   ))     /* 5     */
-  #define EXTERNAL                 ((VREF_REFSEL_VREFA_gc << 4) | (VREF_REFSEL_VREFA_gc ))     /* 6     */
+  #if defined(EXTERNAL_VREF_AVAILABLE)
+    #define EXTERNAL                 ((VREF_REFSEL_VREFA_gc << 4) | (VREF_REFSEL_VREFA_gc ))   /* 6     */
+  #endif
   #define INTERNAL2V500            ((VREF_REFSEL_2V500_gc << 4) | (VREF_REFSEL_2V500_gc ))
   #define INTERNAL4V1              ((VREF_REFSEL_4V096_gc << 4) | (VREF_REFSEL_4V096_gc ))
   #define DEFAULT                  ((VREF_REFSEL_VDD_gc   << 4) | (VREF_REFSEL_VDD_gc   ))
 
+  
 #else /* ADC INTERNAL REFS           High nybble for DAC/AC        Low nybble for ADC   */
   #define DEFAULT                  ((  VREF_REFSEL_VDD_gc << 4) | (ADC_REFSEL_VDD_gc    ))     /* 5  0    TOTALLY DIFFERENT! */
-  #define EXTERNAL                 ((VREF_REFSEL_VREFA_gc << 4) | (ADC_REFSEL_VREFA_gc  ))     /* 6  2    */
+  #if defined(EXTERNAL_VREF_AVAILABLE)
+    #define EXTERNAL                 ((VREF_REFSEL_VREFA_gc << 4) | (ADC_REFSEL_VREFA_gc  ))   /* 6  2    */
+  #endif
   #define INTERNAL1V024            ((VREF_REFSEL_1V024_gc << 4) | (ADC_REFSEL_1V024_gc  ))     /* 0  4    */
   #define INTERNAL2V048            ((VREF_REFSEL_2V048_gc << 4) | (ADC_REFSEL_2V048_gc  ))     /* 1  5    */
   #define INTERNAL4V096            ((VREF_REFSEL_4V096_gc << 4) | (ADC_REFSEL_4V096_gc  ))     /* 2  6    */

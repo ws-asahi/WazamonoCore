@@ -46,8 +46,14 @@
     return (r | refval); // which will be the correct value of the new-style constants, 0xxx0xxx
   }
 #else
-  _prefix uint8_t  _acreftab[8] = {INTERNAL1V024,   INTERNAL2V048, INTERNAL4V096,   INTERNAL2V500, NOT_A_REFERENCE, VDD, EXTERNAL, NOT_A_REFERENCE};
-  _prefix uint8_t _adcreftab[8] = {          VDD, NOT_A_REFERENCE,      EXTERNAL, NOT_A_REFERENCE,   INTERNAL1V024,  INTERNAL2V048, INTERNAL4V096, INTERNAL2V500};
+  #if defined(EXTERNAL)
+    #define _EXTERNAL_OR_NONE EXTERNAL
+  #else
+    #define _EXTERNAL_OR_NONE NOT_A_REFERENCE
+  #endif
+  _prefix uint8_t  _acreftab[8] = {INTERNAL1V024,   INTERNAL2V048, INTERNAL4V096,   INTERNAL2V500, NOT_A_REFERENCE, VDD, _EXTERNAL_OR_NONE, NOT_A_REFERENCE};
+  _prefix uint8_t _adcreftab[8] = {          VDD, NOT_A_REFERENCE,      _EXTERNAL_OR_NONE, NOT_A_REFERENCE,   INTERNAL1V024,  INTERNAL2V048, INTERNAL4V096, INTERNAL2V500};
+  #undef _EXTERNAL_OR_NONE
 
   inline __attribute__((always_inline))uint8_t _acref_to_c(uint8_t refval) {
     refval &= 0x07;
@@ -121,8 +127,15 @@ inline __attribute__((always_inline)) void check_valid_analog_pin(pin_size_t pin
 
 inline __attribute__((always_inline)) void check_valid_analog_ref(uint8_t mode) {
   if (__builtin_constant_p(mode)) {
-    if (!(mode == EXTERNAL || mode == VDD || mode == INTERNAL1V024 || mode == INTERNAL2V048 || mode == INTERNAL4V1 || mode == INTERNAL2V5))
-      badArg("analogReference called with argument that is not a valid analog reference");
+    #if defined(EXTERNAL)
+      if (!(mode == EXTERNAL || mode == VDD || mode == INTERNAL1V024 || mode == INTERNAL2V048 || mode == INTERNAL4V1 || mode == INTERNAL2V5))
+    #else
+      if (!(mode == VDD || mode == INTERNAL1V024 || mode == INTERNAL2V048 || mode == INTERNAL4V1 || mode == INTERNAL2V5))
+    #endif
+    {
+        badArg("analogReference called with argument that is not a valid analog reference");
+    }
+
   }
 }
 

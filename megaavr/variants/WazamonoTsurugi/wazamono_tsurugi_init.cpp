@@ -23,7 +23,7 @@
  *   - CCL 30.2.2.1 (INSEL): IN0 = EVENTA selects EVSYS event channel A.
  *   - EVSYS: PORTD EVGENn pin-level generator; channel generator code for
  *     PORTD EVGEN0 = 0x40 | (port<<1) = 0x40 | (3<<1) = 0x46.
- *   - PORT EVGENCTRL: EVGEN0SEL picks which PORTD pin feeds EVGEN0 (6 = PD6).
+ *   - PORT EVGENCTRLA: EVGEN0SEL picks which PORTD pin feeds EVGEN0 (6 = PD6).
  *
  * IMPORTANT (VUSB power domain)
  *   PC3 is in the VUSB power domain, so its output buffer is only powered while the
@@ -58,8 +58,8 @@ void initVariant(void) {
    * (SPI SCK or digitalWrite). Preserves PULLUPEN/INVEN bits. */
   PORTD.PIN6CTRL &= ~PORT_ISC_gm;
 
-  /* PORTD EVGEN0 follows PD6.  EVGENCTRL = (EVGEN1SEL<<4)|EVGEN0SEL; 6 -> PD6. */
-  PORTD.EVGENCTRL = (0x0 << PORT_EVGEN1SEL_gp) | (0x6 << PORT_EVGEN0SEL_gp);
+  /* PORTD EVGEN0 follows PD6.  EVGENCTRLA = (EVGEN1SEL<<4)|EVGEN0SEL; 6 -> PD6. */
+  PORTD.EVGENCTRLA = (0x0 << PORT_EVGEN1SEL_gp) | (0x6 << PORT_EVGEN0SEL_gp);
 
   /* Route PORTD EVGEN0 onto EVSYS channel 0, then feed channel 0 to CCL LUT1 in A.
    *   CHANNEL0 generator   = 0x46  (PORTD EVGEN0; see header)
