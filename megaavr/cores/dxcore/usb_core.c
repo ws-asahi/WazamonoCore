@@ -469,8 +469,15 @@ void usbInit(void) {
     oschf |=  (CLKCTRL_AUTOTUNE_SOF_gc | CLKCTRL_ALGSEL_INCR_gc);
     _PROTECTED_WRITE(CLKCTRL.OSCHFCTRLA, oschf);
 
-    /* 2. Enable VUSB regulator (5V VDD -> 3.3V VUSB) */
+    /* 2. Enable VUSB regulator (5V VDD -> 3.3V VUSB)
+     *    ONLY on boards that generate VUSB on-chip (VDD = 5 V, datasheet power
+     *    config 5b). Boards with an EXTERNAL 3.3 V VUSB supply (e.g. an on-board
+     *    LDO, VDD = VUSB = 3.3 V, config 3s) must NOT enable the internal
+     *    regulator, or it would fight the external supply. Selected per board in
+     *    boards.txt via -DUSB_VREG_INTERNAL (set for Tsurugi, not for Tachi). */
+#if defined(USB_VREG_INTERNAL)
     SYSCFG.VUSBCTRL = SYSCFG_USBVREG_bm;
+#endif
 
     /* 3. Settle */
     _delay_ms(1);

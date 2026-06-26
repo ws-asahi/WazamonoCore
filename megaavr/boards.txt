@@ -27,6 +27,11 @@ wazamonotachi.build.f_cpu={build.speed}000000L
 wazamonotachi.build.text_section_start=.text=0x1000
 wazamonotachi.build.defaultswaps=
 wazamonotachi.build.extra_flags= {build.defaultswaps} -DUSING_AVRDU_CDC_BOOTLOADER -DUSING_OPTIBOOT
+# Force-link the variant init TU (variants/WazamonoTachi/wazamono_tachi_init.cpp).
+# Arduino archives variant objects into core.a, so its strong initVariant()/
+# activity-LED hooks would otherwise be dropped (core main.cpp has a weak
+# initVariant). -u pulls the member; the marker symbol is defined in that file.
+wazamonotachi.compiler.c.elf.extra_flags=-Wl,-u,wazamono_tachi_variant_keep
 wazamonotachi.build.export_merged_output=false
 wazamonotachi.build.printf=
 wazamonotachi.build.flmapopts=
@@ -106,7 +111,10 @@ wazamonotachi.bootloader.class=usbcdcboot_wazamonotachi
 # =====================  Wazamono Tsurugi (AVR64DU32)  ===============
 #  Arduino Uno R3 form factor. Same AVR64DU32 + USB-CDC bootloader as
 #  the Tachi; differs in pin layout (Uno R3 compatible) and timer use:
-#  millis() is on TCB1 so TCB0 is free for D4 PWM (TCB0 ALT1 = PF4).
+#  millis() is on TCB0 so TCB1 is free for D3 PWM (TCB1 ALT1 = PF5) and
+#  for tone() (Tone.cpp routes tone to TCB1 whenever millis is on TCB0;
+#  tone therefore shares TCB1 with D3 PWM - using tone() suspends D3 PWM
+#  only, exactly like Uno R3's Timer2, but D11 PWM (TCA0) is preserved).
 wazamonotsurugi.name=Wazamono Tsurugi (AVR64DU32)
 
 wazamonotsurugi.upload.tool=avrdude
@@ -120,7 +128,12 @@ wazamonotsurugi.build.core=dxcore
 wazamonotsurugi.build.f_cpu={build.speed}000000L
 wazamonotsurugi.build.text_section_start=.text=0x1000
 wazamonotsurugi.build.defaultswaps=
-wazamonotsurugi.build.extra_flags= {build.defaultswaps} -DUSING_AVRDU_CDC_BOOTLOADER -DUSING_OPTIBOOT
+wazamonotsurugi.build.extra_flags= {build.defaultswaps} -DUSING_AVRDU_CDC_BOOTLOADER -DUSING_OPTIBOOT -DUSB_VREG_INTERNAL
+# Force-link the variant init TU (variants/WazamonoTsurugi/wazamono_tsurugi_init.cpp).
+# Arduino archives variant objects into core.a, so its strong initVariant() that
+# sets up the CCL/EVSYS LED mirror would otherwise be dropped (core main.cpp has
+# a weak initVariant). -u pulls the member; the marker symbol is in that file.
+wazamonotsurugi.compiler.c.elf.extra_flags=-Wl,-u,wazamono_tsurugi_variant_keep
 wazamonotsurugi.build.export_merged_output=false
 wazamonotsurugi.build.printf=
 wazamonotsurugi.build.flmapopts=
@@ -141,8 +154,8 @@ wazamonotsurugi.bootloader.wdttimeoutbits=0000
 wazamonotsurugi.bootloader.eesavebit=1
 wazamonotsurugi.bootloader.resetpinbit=1
 wazamonotsurugi.bootloader.sutbits=100
-# Compile-time options: millis=TCB1 (so TCB0/D4 PWM stays free), Wire=single.
-wazamonotsurugi.build.millistimer=B1
+# Compile-time options: millis=TCB0 (frees TCB1 for D3 PWM + tone), Wire=single.
+wazamonotsurugi.build.millistimer=B0
 wazamonotsurugi.build.wiremode=MORS_SINGLE
 wazamonotsurugi.bootloader.resetpinbits={bootloader.resetpinbit}
 wazamonotsurugi.bootloader.avrdudefuse5="-Ufuse5:w:{bootloader.SYSCFG0}:m"

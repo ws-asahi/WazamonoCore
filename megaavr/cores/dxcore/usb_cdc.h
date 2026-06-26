@@ -85,6 +85,12 @@ void usb_cdc_on_ep2_out(uint16_t cnt);     /* EP2 OUT TRNCOMPL         */
 void usb_cdc_on_ep3_in_done(void);         /* EP3 IN TRNCOMPL          */
 void usb_cdc_on_sof(void);                 /* SOF: idle TX flush (ZLP) */
 
+/* Activity-LED hooks - board-agnostic, weak no-op by default (usb_cdc.c).
+ * A board variant may override these to drive RX/TX activity LEDs (ISR ctx). */
+void usb_cdc_on_rx_activity(void);         /* CDC OUT data received (host->dev) */
+void usb_cdc_on_tx_activity(void);         /* CDC IN data sent      (dev->host) */
+void usb_cdc_on_led_tick(void);            /* USB SOF, ~1 ms cadence            */
+
 /* Call from main loop to drive the TX pump */
 void usbCdcPoll(void);
 

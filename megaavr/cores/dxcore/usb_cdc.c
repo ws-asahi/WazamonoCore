@@ -204,9 +204,17 @@ volatile uint16_t g_cdc_rx_total = 0;   /* diagnostic: raw bytes received on EP2
 volatile uint16_t g_cdc_tx_starts = 0;  /* diagnostic: EP3 IN transfers started */
 volatile uint16_t g_cdc_tx_pkts   = 0;  /* diagnostic: EP3 IN completions (host read) */
 
+/* Activity-LED hooks: weak no-op defaults. A board variant (e.g. Tachi) may
+ * override these to drive RX/TX activity LEDs; boards without such LEDs
+ * (Tsurugi, which uses PD4/PD5 as D11/D12) keep these no-ops. See usb_cdc.h. */
+__attribute__((weak)) void usb_cdc_on_rx_activity(void) { }
+__attribute__((weak)) void usb_cdc_on_tx_activity(void) { }
+__attribute__((weak)) void usb_cdc_on_led_tick(void)    { }
+
 void usb_cdc_on_ep2_out(uint16_t cnt) {
     if (cnt > USB_EP2_SIZE) cnt = USB_EP2_SIZE;
     g_cdc_rx_total += cnt;
+    if (cnt) usb_cdc_on_rx_activity();       /* RX activity LED (data received) */
     for (uint16_t i = 0; i < cnt; i++) {
         uint8_t next = (uint8_t)((g_rx_head + 1) % CDC_RX_RING_SIZE);
         if (next == g_rx_tail) break;            /* overflow: drop rest */
@@ -251,6 +259,7 @@ static void cdc_tx_pump(void) {
     USB0.STATUS[3].INCLR = USB_BUSNAK_bm;
     g_cdc_tx_starts++;
     g_tx_in_flight = true;
+    usb_cdc_on_tx_activity();                /* TX activity LED (real data packet) */
     /* Remember whether this was a maximum-length packet: a full 64-byte
      * bulk-IN packet does NOT terminate the host's transfer, so if the
      * ring then drains we must emit a ZLP (see usb_cdc_on_sof). */
@@ -293,6 +302,7 @@ static bool tx_ring_put(uint8_t b) {
  * interrupted and an idle link emits exactly one terminating ZLP.
  * ============================================================ */
 void usb_cdc_on_sof(void) {
+    usb_cdc_on_led_tick();                   /* RX/TX activity LED one-shot tick (~1 ms) */
     if (g_current_configuration != 1) return;
     if (g_tx_in_flight) return;
     /* Data queued but not yet shipped: ensure forward progress. */
