@@ -62,7 +62,7 @@ wazamonotachi.build.wiremode=MORS_SINGLE
 wazamonotachi.bootloader.resetpinbits={bootloader.resetpinbit}
 wazamonotachi.bootloader.avrdudefuse5="-Ufuse5:w:{bootloader.SYSCFG0}:m"
 wazamonotachi.program.avrdudefuse5="-Ufuse5:w:{bootloader.SYSCFG0}:m"
-wazamonotachi.bootloader.avrdudestring=-Uflash:w:{bootloader.file}:i
+wazamonotachi.bootloader.avrdudestring=-Uflash:w:{runtime.platform.path}/bootloaders/{bootloader.file}:i
 wazamonotachi.bootloader.pymcuprogstring=-aerase
 wazamonotachi.build.mcupostfix=
 wazamonotachi.build.printfabr=
@@ -75,7 +75,7 @@ wazamonotachi.upload.speed=115200
 wazamonotachi.upload.extra_params=-D
 wazamonotachi.upload.use_1200bps_touch=true
 wazamonotachi.upload.wait_for_upload_port=true
-wazamonotachi.bootloader.file={runtime.platform.path}/bootloaders/hex/{bootloader.class}.hex
+wazamonotachi.bootloader.file=hex/{bootloader.class}.hex
 wazamonotachi.bootloader.appspm=
 
 # --- Clock: WITH 24 MHz crystal (default) or WITHOUT (internal OSCHF) ---
@@ -160,7 +160,7 @@ wazamonotsurugi.build.wiremode=MORS_SINGLE
 wazamonotsurugi.bootloader.resetpinbits={bootloader.resetpinbit}
 wazamonotsurugi.bootloader.avrdudefuse5="-Ufuse5:w:{bootloader.SYSCFG0}:m"
 wazamonotsurugi.program.avrdudefuse5="-Ufuse5:w:{bootloader.SYSCFG0}:m"
-wazamonotsurugi.bootloader.avrdudestring=-Uflash:w:{bootloader.file}:i
+wazamonotsurugi.bootloader.avrdudestring=-Uflash:w:{runtime.platform.path}/bootloaders/{bootloader.file}:i
 wazamonotsurugi.bootloader.pymcuprogstring=-aerase
 wazamonotsurugi.build.mcupostfix=
 wazamonotsurugi.build.printfabr=
@@ -173,7 +173,7 @@ wazamonotsurugi.upload.speed=115200
 wazamonotsurugi.upload.extra_params=-D
 wazamonotsurugi.upload.use_1200bps_touch=true
 wazamonotsurugi.upload.wait_for_upload_port=true
-wazamonotsurugi.bootloader.file={runtime.platform.path}/bootloaders/hex/{bootloader.class}.hex
+wazamonotsurugi.bootloader.file=hex/{bootloader.class}.hex
 wazamonotsurugi.bootloader.appspm=
 
 # --- Clock: WITH 24 MHz crystal (default) or WITHOUT (internal OSCHF) ---

@@ -4,32 +4,54 @@
 #  WazamonoCore fork - build the USB CDC bootloader for the
 #  Wazamono product boards. POSIX counterpart of build_wazamono.bat.
 #
-#  The clean-room bootloader source is NOT modified. The only board
-#  difference from the generic 64du build is the DFU-status LED pin,
-#  passed in at build time:
+#  The clean-room bootloader source is NOT modified. The only per-board
+#  difference is passed in at build time:
 #
-#    board             MCU         LED   pol     USB ident (VID:PID)
-#    ----------------  ----------  ----  ------  -------------------
-#    Wazamono Tachi    avr64du32   PD5   act-LO  0x1209:0x0005
-#    Wazamono Tsurugi  avr64du32   PD6   act-HI  0x1209:0x0007
+#    board             MCU         LED   pol       USB ident (VID:PID)
+#    ----------------  ----------  ----  --------  -------------------
+#    Wazamono Tachi    avr64du32   PD5   act-LOW   0x1209:0x0005
+#    Wazamono Tsurugi  avr64du32   PC3   act-HIGH  0x1209:0x0007
 #
-#  Per-board build differences are passed in at build time; the
-#  clean-room source is NOT edited per board:
 #    - LED pin     : LED_PORT / LED_PIN
 #    - LED polarity: LED_AH=1 (active-HIGH) | LED_AL=1 (active-LOW)
 #                    Neither given => active-LOW; both given => LED_AH wins.
 #    - USB identity: BOARD=TACHI | TSURUGI  (selects PID + product string)
 #
-#  Each board passes its polarity explicitly (Tachi=AL, Tsurugi=AH), so the
-#  source-level fallback default can change later without affecting either
-#  board.  Active-HIGH = DxCore / Arduino "D13"; active-LOW = Pro Micro.
+#  Toolchain: by default this uses the Windows avr-gcc you copied to
+#  C:\avr-gcc (the same one the IDE uses), auto-translated to this shell's
+#  view -- /c/avr-gcc under Git Bash/MSYS, /mnt/c/avr-gcc under WSL -- and
+#  prepended to PATH.  make then runs avr-gcc(.exe) from PATH.
+#
+#  Override the toolchain, e.g. a native Linux build under WSL:
+#    GCC_BIN=$HOME/avr-gcc-build/build/avr-gcc-15.2.0-x64-linux/bin ./build_wazamono.sh
+#  or skip auto-detect and use whatever avr-gcc is already on your PATH:
+#    GCC_BIN= ./build_wazamono.sh
+#  (Under WSL prefer the Linux toolchain above; running the Windows .exe via
+#   /mnt/c works only for source trees on a path the .exe can resolve.)
 #
 #  Usage (from this directory):
-#    ./build_wazamono.sh                       # toolchain on $PATH
-#    TOOLROOT=../../../../tools ./build_wazamono.sh   # DxCore toolchain
+#    ./build_wazamono.sh
 # ============================================================
 set -euo pipefail
 cd "$(dirname "$0")"
+
+# --- Toolchain: default to C:\avr-gcc, translated for this shell ----------
+# Set GCC_BIN explicitly to override; set it to empty to keep your own PATH.
+if [ "${GCC_BIN+set}" != "set" ]; then
+  GCC_BIN=""
+  for root in /c/avr-gcc /mnt/c/avr-gcc; do
+    [ -d "$root" ] || continue
+    cand="$(ls -d "$root"/avr-gcc-*/bin 2>/dev/null | sort | tail -n1)"
+    if [ -z "$cand" ] && [ -d "$root/bin" ]; then cand="$root/bin"; fi
+    if [ -n "$cand" ]; then GCC_BIN="$cand"; break; fi
+  done
+fi
+if [ -n "${GCC_BIN}" ]; then
+  case ":$PATH:" in
+    *":$GCC_BIN:"*) ;;
+    *) PATH="$GCC_BIN:$PATH" ;;
+  esac
+fi
 
 MAKE="${MAKE:-make}"
 TOOLROOT="${TOOLROOT:-}"
@@ -47,7 +69,7 @@ build() {            # $1=class  $2=mcu  $3=LEDport  $4=LEDpin  $5=board  $6=LED
 
 #     class             mcu        LEDport LEDpin board     LEDpol(AH|AL)
 build wazamonotachi   avr64du32   PORTD   5      TACHI     AL
-build wazamonotsurugi avr64du32   PORTD   6      TSURUGI   AH
+build wazamonotsurugi avr64du32   PORTC   3      TSURUGI   AH
 
 echo ""
 echo "=== collecting hex files into ../hex/ ==="

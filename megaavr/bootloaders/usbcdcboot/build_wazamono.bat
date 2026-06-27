@@ -7,41 +7,38 @@ REM  WazamonoCore fork - build the USB CDC bootloader for the
 REM  Wazamono product boards.
 REM
 REM  This does NOT modify the clean-room bootloader source. The only
-REM  board difference from the generic 64du build is the DFU-status
-REM  LED pin, which is passed in at build time:
+REM  per-board build differences are passed in at build time:
 REM
-REM    board             MCU         LED   pol     USB ident (VID:PID)
-REM    ----------------  ----------  ----  ------  -------------------
-REM    Wazamono Tachi    avr64du32   PD5   act-LO  0x1209:0x0005
-REM    Wazamono Tsurugi  avr64du32   PD6   act-LO  0x1209:0x0007
+REM    board             MCU         LED   pol       USB ident (VID:PID)
+REM    ----------------  ----------  ----  --------  -------------------
+REM    Wazamono Tachi    avr64du32   PD5   act-LOW   0x1209:0x0005
+REM    Wazamono Tsurugi  avr64du32   PC3   act-HIGH  0x1209:0x0007
 REM
-REM  Per-board build differences are passed in at build time; the
-REM  clean-room source is NOT edited per board:
-REM    - LED pin    : LED_PORT / LED_PIN
-REM    - LED polarity: LED_ACTIVE_HIGH=1   (default = active-LOW)
+REM    - LED pin     : LED_PORT / LED_PIN
+REM    - LED polarity: LED_AH=1 (active-HIGH) | LED_AL=1 (active-LOW)
+REM                    Neither given => active-LOW; both given => LED_AH wins.
 REM    - USB identity: BOARD=TACHI | TSURUGI  (selects PID + product string)
 REM
-REM  main.c defaults the LED to PA7 and drives it active-LOW; the Wazamono
-REM  RX/TX LEDs are also active-LOW (Pro Micro convention).
+REM  Tachi's LED (PD5) is active-LOW (Pro Micro RX/TX convention); Tsurugi's
+REM  LED (PC3) is active-HIGH (Arduino Uno "D13" convention).  Each board
+REM  passes its polarity explicitly below.
 REM
-REM  NOTE on the Tsurugi LED polarity: this build assumes active-LOW.  The
-REM  classic Arduino Uno "D13" LED is active-HIGH - if the Tsurugi schematic
-REM  uses that, add "AH" as the 6th argument to its :build call below.
-REM
-REM  The signature is read from SIGROW at runtime (stk500.c), so the
-REM  single avr64du32 hex serves every Wazamono board that shares the
-REM  64 KB flash size; the bootloader always reports the true DEVICEID.
+REM  The signature is read from SIGROW at runtime (stk500.c), so the single
+REM  avr64du32 hex serves every Wazamono board that shares the 64 KB flash.
 REM
 REM  Put this in  WazamonoCore\megaavr\bootloaders\usbcdcboot\  and run.
 REM ============================================================
 
-REM --- find avr-gcc: 5 levels up (Arduino\tools), version auto-detected
+REM --- find avr-gcc under C:\avr-gcc (version auto-detected) ------------
+REM  The avr-gcc 15.2 toolchain lives at  C:\avr-gcc\avr-gcc-15.2.0\ .
+REM  Override the root with:  set "AVRGCC_ROOT=D:\path"  before running.
+if not defined AVRGCC_ROOT set "AVRGCC_ROOT=C:\avr-gcc"
 set "GCCBIN="
-for /d %%d in ("%~dp0..\..\..\..\..\tools\avr-gcc\*") do set "GCCBIN=%%~fd\bin"
+for /d %%d in ("%AVRGCC_ROOT%\avr-gcc-*") do set "GCCBIN=%%~fd\bin"
+if not defined GCCBIN if exist "%AVRGCC_ROOT%\bin\avr-gcc.exe" set "GCCBIN=%AVRGCC_ROOT%\bin"
 if not defined GCCBIN (
-  echo ERROR: avr-gcc toolchain folder not found under
-  echo   %~dp0..\..\..\..\..\tools\avr-gcc\
-  echo Adjust the path in the for /d line to match your install.
+  echo ERROR: no avr-gcc-*\bin found under "%AVRGCC_ROOT%"
+  echo   Put the toolchain at  C:\avr-gcc\avr-gcc-15.2.0\   ^(or set AVRGCC_ROOT^).
   popd ^& exit /b 1
 )
 if not exist "%GCCBIN%\avr-gcc.exe" (
@@ -51,11 +48,9 @@ if not exist "%GCCBIN%\avr-gcc.exe" (
 set "PATH=%GCCBIN%;%PATH%"
 if not defined MAKE set MAKE=make
 
-REM            class             mcu        LEDport LEDpin board     [LEDpol]
-call :build wazamonotachi     avr64du32  PORTD   5      TACHI
-call :build wazamonotsurugi   avr64du32  PORTD   6      TSURUGI AH
-REM  ^ if the Tsurugi D13 LED is active-HIGH, append "AH" as the 6th arg:
-REM      call :build wazamonotsurugi   avr64du32  PORTD   6      TSURUGI   AH
+REM            class             mcu        LEDport LEDpin board     LEDpol(AH|AL)
+call :build wazamonotachi     avr64du32  PORTD   5      TACHI   AL
+call :build wazamonotsurugi   avr64du32  PORTC   3      TSURUGI AH
 
 echo.
 echo === collecting hex files into ..\hex\ ===
@@ -70,9 +65,10 @@ endlocal
 goto :eof
 
 :build
-REM  %1=class tag  %2=mcu  %3=LED port  %4=LED pin  %5=board tag  %6=LED pol (AH=active-high, optional)
+REM  %1=class tag  %2=mcu  %3=LED port  %4=LED pin  %5=board tag  %6=LED pol (AH | AL)
 set "POLFLAG="
-if /i "%~6"=="AH" set "POLFLAG=LED_ACTIVE_HIGH=1"
+if /i "%~6"=="AH" set "POLFLAG=LED_AH=1"
+if /i "%~6"=="AL" set "POLFLAG=LED_AL=1"
 echo.
 echo ------ building %2  -^> usbcdcboot_%1.hex  (LED %3 %4, board %5 %6) ------
 del /q src\*.o 2>nul
