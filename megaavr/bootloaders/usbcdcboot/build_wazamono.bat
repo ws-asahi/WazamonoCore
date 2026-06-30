@@ -13,6 +13,7 @@ REM    board             MCU         LED   pol       USB ident (VID:PID)
 REM    ----------------  ----------  ----  --------  -------------------
 REM    Wazamono Tachi    avr64du32   PD5   act-LOW   0x1209:0x0005
 REM    Wazamono Tsurugi  avr64du32   PC3   act-HIGH  0x1209:0x0007
+REM    Wazamono Kunai    avr32du20   PD4   act-LOW   0x1209:0x0009
 REM
 REM    - LED pin     : LED_PORT / LED_PIN
 REM    - LED polarity: LED_AH=1 (active-HIGH) | LED_AL=1 (active-LOW)
@@ -51,6 +52,7 @@ if not defined MAKE set MAKE=make
 REM            class             mcu        LEDport LEDpin board     LEDpol(AH|AL)
 call :build wazamonotachi     avr64du32  PORTD   5      TACHI   AL
 call :build wazamonotsurugi   avr64du32  PORTC   3      TSURUGI AH
+call :build wazamonokunai     avr32du20  PORTD   4      KUNAI   AL
 
 echo.
 echo === collecting hex files into ..\hex\ ===

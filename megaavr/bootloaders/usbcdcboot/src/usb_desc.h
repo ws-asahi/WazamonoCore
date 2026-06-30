@@ -31,6 +31,8 @@
 #define USB_BL_VID              0x1209
 #if defined(WAZAMONO_BOARD_TSURUGI)
 #define USB_BL_PID              0x0007   /* Wazamono Tsurugi bootloader */
+#elif defined(WAZAMONO_BOARD_KUNAI)
+#define USB_BL_PID              0x0009   /* Wazamono Kunai bootloader */
 #else  /* default: WAZAMONO_BOARD_TACHI */
 #define USB_BL_PID              0x0005   /* Wazamono Tachi bootloader */
 #endif
