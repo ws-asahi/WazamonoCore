@@ -224,7 +224,7 @@ wazamonokunai.build.core=dxcore
 wazamonokunai.build.f_cpu={build.speed}000000L
 wazamonokunai.build.text_section_start=.text=0x1000
 wazamonokunai.build.defaultswaps=
-wazamonokunai.build.extra_flags= {build.defaultswaps} -DUSING_AVRDU_CDC_BOOTLOADER -DUSING_OPTIBOOT -DUSB_VREG_INTERNAL
+wazamonokunai.build.extra_flags= {build.defaultswaps} -DUSING_AVRDU_CDC_BOOTLOADER -DUSING_OPTIBOOT
 # Force-link the variant init TU (variants/WazamonoKunai/wazamono_kunai_init.cpp).
 # Arduino archives variant objects into core.a, so its strong initVariant() (which
 # selects TWI0 ALT3 so I2C lands on PA0/PA1 = D4/D5) would otherwise be dropped

@@ -119,7 +119,7 @@ all: $(TARGET).hex $(TARGET).lst
 
 $(TARGET).elf: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS)
-	$(SIZE) --mcu=$(MCU) -A $@
+	$(SIZE) $@
 
 $(TARGET).hex: $(TARGET).elf
 	$(OBJCOPY) -O ihex -R .eeprom -R .fuse -R .signature -R .user_signatures $< $@
@@ -132,12 +132,8 @@ $(TARGET).lst: $(TARGET).elf
 
 size: $(TARGET).elf
 	@echo ""
-	@echo "=== Bootloader size vs $(BOOTSIZE)-byte budget ==="
-	@$(SIZE) --mcu=$(MCU) -A $< \
-	  | awk '/^.text/  { t=$$2 } \
-	         /^.data/  { d=$$2 } \
-	         END { printf "  .text = %u\n  .data = %u (init image)\n  total = %u bytes\n  free  = %d bytes\n", \
-	                       t, d, t+d, $(BOOTSIZE)-(t+d) }'
+	@echo "=== Bootloader size (budget: $(BOOTSIZE) bytes flash for .text + .data) ==="
+	$(SIZE) -A $<
 
 clean:
 	rm -f $(OBJS) $(TARGET).elf $(TARGET).hex $(TARGET).lst $(TARGET).map
