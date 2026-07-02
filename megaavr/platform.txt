@@ -40,13 +40,22 @@ compiler.c.cmd=avr-gcc
 compiler.optimization_flags=-Os -g -mrelax
 compiler.optimization_flags.release=-Os -g -mrelax
 compiler.optimization_flags.debug=-Og -ggdb3 -DDEBUG
-compiler.c.flags=-c {compiler.optimization_flags} {compiler.warning_flags} -std=gnu11 -ffunction-sections -fdata-sections -fshort-enums -flto -MMD -fno-fat-lto-objects -Werror=implicit-function-declaration -Wundef
+
+# Per-board rodata placement policy (set in boards.txt, default empty).
+# avrxmega2/4 parts (64KB+, FLMAP window: avr64du32 etc.) set
+#   build.rodata_flags=-mrodata-in-ram
+# to keep .rodata in RAM (Phase 1: preserves DxCore FLMAP/PROGMEM_MAPPED
+# semantics under GCC>=14, which otherwise seizes FLMAP for rodata).
+# avrxmega3 parts (<=32KB fully-mapped flash: avr32du20 etc.) MUST leave it
+# empty: rodata lives in mapped flash natively and GCC rejects the option.
+build.rodata_flags=
+compiler.c.flags=-c {compiler.optimization_flags} {build.rodata_flags} {compiler.warning_flags} -std=gnu11 -ffunction-sections -fdata-sections -fshort-enums -flto -MMD -fno-fat-lto-objects -Werror=implicit-function-declaration -Wundef
 # DxCore has the three additional FLMAP sections for mapped flash
-compiler.c.elf.flags={compiler.warning_flags} {compiler.optimization_flags} -flto -fuse-linker-plugin -Wl,--gc-sections,--section-start={build.text_section_start},--section-start=.FLMAP_SECTION1=0x8000,--section-start=.FLMAP_SECTION2=0x10000,--section-start=.FLMAP_SECTION3=0x18000
+compiler.c.elf.flags={compiler.warning_flags} {compiler.optimization_flags} {build.rodata_flags} -flto -fuse-linker-plugin -Wl,--gc-sections,--section-start={build.text_section_start},--section-start=.FLMAP_SECTION1=0x8000,--section-start=.FLMAP_SECTION2=0x10000,--section-start=.FLMAP_SECTION3=0x18000
 compiler.c.elf.cmd=avr-gcc
-compiler.S.flags=-c -g -x assembler-with-cpp -flto -MMD
+compiler.S.flags=-c -g {build.rodata_flags} -x assembler-with-cpp -flto -MMD
 compiler.cpp.cmd=avr-g++
-compiler.cpp.flags=-c {compiler.optimization_flags} {compiler.warning_flags} -std=gnu++17 -ffunction-sections -fdata-sections -fshort-enums -flto -MMD -fpermissive -Wno-sized-deallocation -fno-exceptions -fno-threadsafe-statics -Wno-error=narrowing
+compiler.cpp.flags=-c {compiler.optimization_flags} {build.rodata_flags} {compiler.warning_flags} -std=gnu++17 -ffunction-sections -fdata-sections -fshort-enums -flto -MMD -fpermissive -Wno-sized-deallocation -fno-exceptions -fno-threadsafe-statics -Wno-error=narrowing
 compiler.ar.cmd=avr-gcc-ar
 compiler.ar.flags=rcs
 compiler.objcopy.cmd=avr-objcopy

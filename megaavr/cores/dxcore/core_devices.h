@@ -44,6 +44,20 @@
   // __AVR_ARCH__ == 103, so all of the flash is memory mapped, and the linker
   // will automatically leave const variables in flash. PROGMEM_MAPPED is defined as nothing
   #define PROGMEM_MAPPED
+#elif defined(__AVR_RODATA_IN_RAM__) && !__AVR_RODATA_IN_RAM__
+  // .rodata lives in the FLMAP-mapped flash window (default since GCC 14 for
+  // AVR64/128 parts when -mrodata-in-ram is not given). A plain const object
+  // is already memory-mapped, so PROGMEM_MAPPED is defined as nothing, just
+  // like on the fully-mapped avrxmega3 parts above. The startup code
+  // (__do_flmap_init, avr-libc >= 2.3, runs in .init3) sets FLMAP from the
+  // linker symbol __flmap (default: last 32 KiB section = the hardware reset
+  // default) and also sets FLMAPLOCK when __flmap_lock is non-zero
+  // (WazamonoCore boards pass -Wl,--defsym,__flmap_lock=1).
+  // Do NOT combine this with LOCK_FLMAP/FLMAPSECTIONn menu options: doFLMAP()
+  // could move the window and turn every .rodata access into garbage.
+  // PROGMEM_SECTION0/1 remain usable in principle, but section 1 overlaps
+  // .rodata's window addresses; the linker will error out on a real overlap.
+  #define PROGMEM_MAPPED
 #elif defined(LOCK_FLMAP)
   #if defined(FLMAPSECTION11)
     #if __AVR_ARCH__ == 106 //if it's 384k

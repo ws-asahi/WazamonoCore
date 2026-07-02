@@ -6,58 +6,61 @@ REM  make_platform_local.bat
 REM  Place in  WazamonoCore\megaavr\  and run once.
 REM
 REM  WHY: WazamonoCore is a manual (sketchbook hardware) install, so the
-REM  IDE does NOT resolve the azduino toolchain dependency. platform.txt's
+REM  IDE does NOT resolve toolchain dependencies. platform.txt's
 REM  {runtime.tools.avr-gcc.path} then falls back to the stock Arduino
 REM  avr-gcc 7.3.0, which has no AVR DU support -> the build fails with
 REM    "device-specs/specs-avr64du32: No such file or directory".
 REM
-REM  This script auto-detects the azduino toolchain you already copied to
-REM  Arduino\tools\ (the same one build_wazamono.bat uses) and writes a
-REM  platform.local.txt that overrides compiler.path (and avrdude, if
-REM  present) to point at it. platform.local.txt is environment-specific
-REM  (absolute paths) and should be listed in .gitignore.
+REM  This script auto-detects the avr-gcc 15.x toolchain at C:\avr-gcc
+REM  (override root with:  set "AVRGCC_ROOT=D:\path"  before running)
+REM  and the avrdude under Arduino\tools\avrdude, then writes a
+REM  platform.local.txt pointing at them. platform.local.txt is
+REM  environment-specific (absolute paths) and is listed in .gitignore.
+REM
+REM  NOTE: do NOT add -mrodata-in-ram here. That flag is per-board
+REM  (build.rodata_flags in boards.txt): valid for avrxmega2/4 parts
+REM  (avr64du32) but rejected by GCC for avrxmega3 parts (avr32du20).
 REM ============================================================
 
-REM  megaavr -> WazamonoCore -> hardware -> Arduino -> tools
-set "TOOLS=%~dp0..\..\..\tools"
-
-REM --- avr-gcc (required for compiling) ---
+REM --- avr-gcc under C:\avr-gcc (version auto-detected) ---
+if not defined AVRGCC_ROOT set "AVRGCC_ROOT=C:\avr-gcc"
 set "GCCDIR="
-for /d %%d in ("%TOOLS%\avr-gcc\*") do set "GCCDIR=%%~fd"
+for /d %%d in ("%AVRGCC_ROOT%\avr-gcc-*") do set "GCCDIR=%%~fd"
+if not defined GCCDIR if exist "%AVRGCC_ROOT%\bin\avr-gcc.exe" set "GCCDIR=%AVRGCC_ROOT%"
 if not defined GCCDIR goto :nogcc
+if not exist "%GCCDIR%\bin\avr-gcc.exe" goto :nogcc
 set "GCCFWD=%GCCDIR:\=/%"
 
 REM --- avrdude (optional; needed to UPLOAD over the USB-CDC bootloader) ---
+REM     megaavr -> WazamonoCore -> hardware -> Arduino -> tools
+set "TOOLS=%~dp0..\..\..\tools"
 set "DUDEDIR="
 for /d %%d in ("%TOOLS%\avrdude\*") do set "DUDEDIR=%%~fd"
 
-> platform.local.txt echo # WazamonoCore platform.local.txt  (auto-generated - add to .gitignore)
->> platform.local.txt echo # Forces the build to use the azduino toolchain (has avr64du32 device-specs)
->> platform.local.txt echo # instead of the IDE default avr-gcc 7.3.0, which lacks AVR DU support.
+> platform.local.txt echo # WazamonoCore platform.local.txt  (machine-local - listed in .gitignore)
+>> platform.local.txt echo # Points the build at the local avr-gcc 15.x toolchain (AVR DU support,
+>> platform.local.txt echo # avr-libc 2.3.1 with merged WDT fixes) instead of the IDE default 7.3.0.
 >> platform.local.txt echo compiler.path=%GCCFWD%/bin/
 if not defined DUDEDIR goto :nodude
 set "DUDEFWD=%DUDEDIR:\=/%"
+>> platform.local.txt echo.
 >> platform.local.txt echo # avrdude with avr64du32 support (sketch upload + burn bootloader)
->> platform.local.txt echo tools.avrdude.path=%DUDEFWD%
-goto :done
-
+>> platform.local.txt echo tools.avrdude.path=%DUDEFWD%/
 :nodude
->> platform.local.txt echo # NOTE: no avrdude found under Arduino\tools\avrdude\ . Compiling will work,
->> platform.local.txt echo # but UPLOADING a sketch over the bootloader needs an avrdude that knows
->> platform.local.txt echo # avr64du32 (>= 7.x). Copy the azduino avrdude there and re-run this script,
->> platform.local.txt echo # then uncomment a line like:  tools.avrdude.path=C:/.../Arduino/tools/avrdude/<ver>
 
-:done
 echo.
-echo Wrote platform.local.txt in "%CD%":
-echo --------------------------------------------------
+echo Wrote platform.local.txt:
+echo ------------------------------------------------------------
 type platform.local.txt
-echo --------------------------------------------------
-echo Restart the Arduino IDE (or re-open the sketch) so it re-reads platform.local.txt.
-popd & endlocal & goto :eof
+echo ------------------------------------------------------------
+if not defined DUDEDIR echo NOTE: no avrdude found under "%TOOLS%\avrdude" - upload over USB-CDC bootloader will use the IDE default avrdude (no avr64du32 support).
+popd
+endlocal
+goto :eof
 
 :nogcc
-echo ERROR: no avr-gcc folder found under "%TOOLS%\avr-gcc\"
-echo Copy the azduino8 toolchain there (the same one build_wazamono.bat used
-echo successfully to build the bootloader), then re-run this script.
-popd & endlocal & exit /b 1
+echo ERROR: no avr-gcc-*\bin\avr-gcc.exe found under "%AVRGCC_ROOT%"
+echo   Put the toolchain at  C:\avr-gcc\avr-gcc-15.2.0\  (or set AVRGCC_ROOT).
+popd
+endlocal
+exit /b 1

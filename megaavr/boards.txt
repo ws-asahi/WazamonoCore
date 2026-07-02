@@ -35,7 +35,8 @@ wazamonotachi.build.extra_flags= {build.defaultswaps} -DUSING_AVRDU_CDC_BOOTLOAD
 # Arduino archives variant objects into core.a, so its strong initVariant()/
 # activity-LED hooks would otherwise be dropped (core main.cpp has a weak
 # initVariant). -u pulls the member; the marker symbol is defined in that file.
-wazamonotachi.compiler.c.elf.extra_flags=-Wl,-u,wazamono_tachi_variant_keep
+wazamonotachi.compiler.c.elf.extra_flags=-Wl,-u,wazamono_tachi_variant_keep -Wl,--defsym,__flmap_lock=1
+wazamonotachi.build.rodata_flags=
 wazamonotachi.build.export_merged_output=false
 wazamonotachi.build.printf=
 wazamonotachi.build.flmapopts=
@@ -137,7 +138,8 @@ wazamonotsurugi.build.extra_flags= {build.defaultswaps} -DUSING_AVRDU_CDC_BOOTLO
 # Arduino archives variant objects into core.a, so its strong initVariant() that
 # sets up the CCL/EVSYS LED mirror would otherwise be dropped (core main.cpp has
 # a weak initVariant). -u pulls the member; the marker symbol is in that file.
-wazamonotsurugi.compiler.c.elf.extra_flags=-Wl,-u,wazamono_tsurugi_variant_keep
+wazamonotsurugi.compiler.c.elf.extra_flags=-Wl,-u,wazamono_tsurugi_variant_keep -Wl,--defsym,__flmap_lock=1
+wazamonotsurugi.build.rodata_flags=
 wazamonotsurugi.build.export_merged_output=false
 wazamonotsurugi.build.printf=
 wazamonotsurugi.build.flmapopts=
@@ -231,6 +233,7 @@ wazamonokunai.build.extra_flags= {build.defaultswaps} -DUSING_AVRDU_CDC_BOOTLOAD
 # (core main.cpp has a weak initVariant). -u pulls the member; the marker symbol
 # is defined in that file.
 wazamonokunai.compiler.c.elf.extra_flags=-Wl,-u,wazamono_kunai_variant_keep
+wazamonokunai.build.rodata_flags=
 wazamonokunai.build.export_merged_output=false
 wazamonokunai.build.printf=
 wazamonokunai.build.flmapopts=

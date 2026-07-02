@@ -75,7 +75,13 @@ uint8_t __attribute__((weak)) onAfterInit() {return 0;} // Called between init()
     _PROTECTED_WRITE(NVMCTRL_CTRLB, temp);
   }
 #else
-  #pragma message("Notice: PROGMEM_MAPPED not available as flash mapping is not locked.")
+  #if defined(__AVR_RODATA_IN_RAM__) && !__AVR_RODATA_IN_RAM__
+    /* .rodata is in the FLMAP-mapped flash window; FLMAP is set (and locked
+     * via __flmap_lock) by the avr-libc startup code in .init3, so there is
+     * nothing for the core to do and PROGMEM_MAPPED is simply empty. */
+  #else
+    #pragma message("Notice: PROGMEM_MAPPED not available as flash mapping is not locked.")
+  #endif
 #endif
 
 int main()  __attribute__((weak));
