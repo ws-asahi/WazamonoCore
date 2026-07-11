@@ -28,12 +28,8 @@ void loop() {
    * Iterate through each byte of the EEPROM storage.
 
    * Larger AVR processors have larger EEPROM sizes, E.g:
-   * tinyAVR 0/1/2-series 2k flash:      64b
-   * tinyAVR 0/1/2-series 4-8k flash:    128b
-   * tinyAVR 0/1/2-series 16-32k flash:  256b
-   * megaAVR 0-series:                   256b (all flash sizes)
-   * DA, DB, EA-series:                  512b (all flash sizes)
-   * DD-series:                          256b (all flash sizes)
+   * The AVR DU-series (all Wazamono boards) has 256 bytes of EEPROM,
+   * regardless of flash size.
 
    * Rather than hard-coding the length, you should use the pre-provided length function.
    * This will make your code portable to all AVR processors.

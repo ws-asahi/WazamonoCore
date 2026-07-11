@@ -9,7 +9,7 @@
 | even numbered LUT. Should work on ALL parts.                          |
 |                                                                       |
 | See the original LatchNoSeq for additional discussion of the rationale|
-| This example is specific to DxCore, and will work on all parts there  |
+| This version is part of WazamonoCore for the AVR DU-series.           |
 | It demonstrates use of event channels to deal with pin constraints    |
 |                                                                       |
 | In this example we use the configurable logic peripherals in AVR      |
@@ -31,7 +31,7 @@
 |                                                                       |
 | The sky (well, and the number of LUTs) is the limit!!                 |
 |                                                                       |
-| This file is only part of DxCore; it is not distributed with mTC.     |
+| This file is part of WazamonoCore.                                    |
 |***********************************************************************/
 
 

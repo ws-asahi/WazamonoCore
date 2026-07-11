@@ -1,8 +1,8 @@
 /***********************************************************************|
-| tinyAVR Configurable Custom Logic library                             |
+| AVR DU Configurable Custom Logic library                              |
 | Modulate.ino                                                          |
 |                                                                       |
-| A library for interfacing with the megaAVR Configurable Custom Logic. |
+| A library for interfacing with the AVR DU Configurable Custom Logic.  |
 | Developed in 2019 by MCUdude.       Example by Spence Konde 2020-2021 |
 | https://github.com/MCUdude/            https://github.com/SpenceKonde |
 |                                                                       |
@@ -19,29 +19,14 @@
 | output any timer channel, modulated by any other. We could even use   |
 | the CCL as an event generator to move the output to one of the EVOUT  |
 | pins!                                                                 |
-| On the Dx-series and 1-series parts, one of the TCD channels might be |
-| used, which may be the most useful thing to modulate with another     |
-| timer, with it's higher maximum speed and dithering features.         |
+| On the DU, the CCL logic inputs can come from TCB0 or TCB1, but this  |
+| is **set by input number** (input0 = TCB0, input1 = TCB1); there is   |
+| no in::tcb1 option.                                                   |
 |                                                                       |
-| It is important to note that it is **not possible to directly port**  |
-| code from tinyAVR parts to other product lines in cases where a TCB is|
-| used!                                                                 |
-| On Dx-series and other non-tiny parts, the CCL logic inpts can come   |
-| from TCB0, TCB1, or TCB2 **but this is set by input number** and there|
-| is no in::tcb1 or in::tcb2 option!                                    |
-| However, on tinyAVR parts thee is either 1 or 2 tcb, and the ones with|
-| a TCB1 have a separate in_tcb1 option.                                |
-|                                                                       |
-| In the crude example below where the timer is configured with the     |
-| analogWrite() function both PORTMUX must be pointed at the port that  |
-| analgoWrite() is used with AND that the pin used is valid; It turns   |
-| out that there is only viable pin on all Dx-series parts and will not |
-| be ANY once the DU-series arrives in the 14-pin pincount, so this     |
-| example will have to be skipped or adapted there. Otherwise we can    |
-| pick PC2. PA0 or PA1 will not compile if a crystal clock is used; we  |
-| do not permit use of invalid pins, as (except for crude tricks like   |
-| this that are never used in "real life") there is never a right time  |
-| to refer to them.                                                     |
+| In the crude example below the carrier timer is configured with       |
+| analogWrite(), so PORTMUX must be pointed at the port that            |
+| analogWrite() is used with, AND the pin used must be valid on the     |
+| board - hence the per-board block below.                              |
 ************************************************************************/
 /* The carrier comes out of TCA0 WO2, so the physical pin follows each
  * board's PWM port mux. */
@@ -64,11 +49,11 @@ void setup() {
   PORTMUX.TCAROUTEA = NEWMUX;                   // Force TCA onto a known set of pins.
 
   Logic0.enable = true;                       // Enable logic block 0
-  Logic0.input0 = logic::in::tcb;             // TCB channel - TCB0. On everything except 0/1-series tinyAVR, that's because this is input 0.
+  Logic0.input0 = logic::in::tcb;             // TCB0 WO (input0 selects TCB0 on the DU)
   //                                              On those, it's because there's a logic::in::tcb1 option too...
   Logic0.input1 = logic::in::masked;          // Mask input 2
   Logic0.input2 = logic::in::tca0;            // Use TCA0 WO2 as input2
-  Logic0.output = logic::out::enable;         // Enable logic block 0 output pin or PA4 (ATtiny))
+  Logic0.output = logic::out::enable;         // Enable LUT0 OUT = PA3 (Tachi: D3 / Tsurugi: D19 / Kunai: D2)
   Logic0.filter = logic::filter::disable;     // No output filter enabled
   Logic0.truth = 0x20;                        // Set truth table - HIGH only if both high
 

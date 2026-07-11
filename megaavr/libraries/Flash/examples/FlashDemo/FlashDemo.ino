@@ -11,8 +11,7 @@ uint8_t testArray3[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
-  // Blink the LED for good measure too - pin PA7 (pin 7) except
-  // on 14-pin DD-series, where it's PD7 (Pin 8)
+  // Blink the LED for good measure too (note: LED_BUILTIN is active-LOW on Tachi)
   #if defined(SWAP_SERIAL)
   // That can be defined to swap serial pins.
   Serial.swap(1);

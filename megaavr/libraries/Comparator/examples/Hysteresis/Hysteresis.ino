@@ -1,5 +1,5 @@
 /***********************************************************************|
-| Modern AVR Comparator library for tinyAVR 0/1/2, megaAVR0, Dx, and  Ex|
+| AVR DU analog comparator library (AC0)                                |
 |                                                                       |
 | Developed in 2019 by MCUdude    https://github.com/MCUdude/           |
 | Ported to tinyAVR & Dx-series by Spence Konde for megaTinyCore and    |
@@ -16,8 +16,8 @@
 
 void setup() {
   // Configure relevant comparator parameters
-  Comparator.input_p = comparator::in_p::in0;      // Use positive input 0 - these are boring options, but they will compile everywhere
-  Comparator.input_n = comparator::in_n::in0;      // Use negative input 0 - which is critical as these are used for CI testing too.
+  Comparator.input_p = comparator::in_p::in0;      // Use positive input 0: in0 = PD2 (Tachi: A1 / Tsurugi: D9; not bonded out on Kunai - use in3/in4 there)
+  Comparator.input_n = comparator::in_n::in0;      // Use negative input 0: in0 = PD3 (Tachi: A0 / Tsurugi: D10; not bonded out on Kunai - use in2 = PD7)
   Comparator.hysteresis = comparator::hyst::large; // Use a 50mV hysteresis
   Comparator.output = comparator::out::enable;     // Enable output on AC0 OUT = PA7 (Tachi: D4 / Tsurugi: D8 / Kunai: D0)
 

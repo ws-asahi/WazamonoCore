@@ -1,14 +1,19 @@
 /***********************************************************************|
-| megaAVR Configurable Custom Logic library                             |
+| AVR DU Configurable Custom Logic library                              |
 |                                                                       |
 | Interrupt.ino                                                         |
 |                                                                       |
-| A library for interfacing with the megaAVR Configurable Custom Logic. |
+| A library for interfacing with the AVR DU Configurable Custom Logic.  |
 | Developed in 2019 by MCUdude.                                         |
 | https://github.com/MCUdude/                                           |
 |                                                                       |
 | In this example we use the configurable logic peripherals the the     |
-| megaAVR to create a 3-input NOR gate using logic block 2 on PORT D.   |
+| AVR DU to create a 3-input NOR gate using logic block 2 on PORT D.    |
+|                                                                       |
+| Wazamono pin note: LUT2's direct inputs are fixed pins IN0=PD0,       |
+| IN1=PD1, IN2=PD2 (Tachi: A3/A2/A1, Tsurugi: D5/D6/D9). These pins are |
+| not bonded out on Kunai - route inputs through the event system there |
+| (see Route_logic_pins in the Event library).                          |
 | We will use input on PD0, PD1 and PD2. Instead of having an output    |
 | pin the logic block will instead trigger an interrupt that runs a     |
 | user defined function.                                                |
@@ -33,17 +38,14 @@ void setup() {
   // Modify the serial port to match your hardware
   Serial.begin(9600);
 
-  // The interrupt is only available on ATmega parts.
-  // This will error on ATtiny parts.
-
   // Initialize logic block 2
-  // Logic block 2 has three inputs, PA0, PA1 and PA2.
-  // It has one output, but this is disabled because we're using an interrupt instead.
+  // Logic block 2 has three inputs: PD0, PD1 and PD2.
+  // It has one output (PD3), but this is disabled because we're using an interrupt instead.
   Logic2.enable = true;               // Enable logic block 2
-  Logic2.input0 = in::input_pullup;   // Set PD0 as input with pullup
-  Logic2.input1 = in::input_pullup;   // Set PD1 as input with pullup
-  Logic2.input2 = in::input_pullup;   // Set PD2 as input with pullup
-  Logic2.output = out::disable;       // Disable output on PA0 (we don't have to though)
+  Logic2.input0 = in::input_pullup;   // IN0 = PD0 (Tachi: A3 / Tsurugi: D5; not on Kunai)
+  Logic2.input1 = in::input_pullup;   // IN1 = PD1 (Tachi: A2 / Tsurugi: D6; not on Kunai)
+  Logic2.input2 = in::input_pullup;   // IN2 = PD2 (Tachi: A1 / Tsurugi: D9; not on Kunai)
+  Logic2.output = out::disable;       // Keep LUT2 OUT (PD3) disabled (we don't have to though)
   Logic2.filter = filter::disable;    // No output filter enabled
   Logic2.truth = 0x01;                // Set truth table
 

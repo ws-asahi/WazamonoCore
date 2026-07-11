@@ -1,15 +1,14 @@
 /***********************************************************************|
-| megaAVR Configurable Custom Logic library                             |
+| AVR DU Configurable Custom Logic library                              |
 |                                                                       |
 | Two_input_NAND.ino                                                    |
 |                                                                       |
-| A library for interfacing with the megaAVR Configurable Custom Logic. |
+| A library for interfacing with the AVR DU Configurable Custom Logic.  |
 | Developed in 2019 by MCUdude. Example fixed Spence Konde 2021         |
-| This version is part of DxCore for AVR DA, DB, etc. Example works for |
-| megaAVR 0-series and tinyAVR 0/1/2-series as well.                    |
+| This version is part of WazamonoCore for the AVR DU-series.           |
 |                                                                       |
-| In this example we use the configurable logic peripherals the the     |
-| megaAVR to create a 2-input NAND gate using logic block 0 on PORT A.  |
+| In this example we use the configurable logic peripherals of the      |
+| AVR DU to create a 2-input NAND gate using logic block 0 on PORT A.  |
 | The example is pretty straight forward, but the truth table value may |
 | be a little difficult to understand at first glance.                  |
 | We will only use PA1 and PA2 as inputs. Thus, bit 0 is always going   |
@@ -31,6 +30,14 @@
 | two input pins are high.                                              |
 |***********************************************************************/
 
+/* Wazamono pin note: LUT0's direct inputs are fixed pins IN0=PA0, IN1=PA1,
+ * IN2=PA2. On Tachi and Tsurugi, PA0/PA1 carry the 24 MHz crystal, so only
+ * IN2 (Tachi: D2 / Tsurugi: D18) can be wired directly there - route the
+ * other inputs through the event system instead (see Route_logic_pins in
+ * the Event library). On Kunai all three are available: IN0 = D4,
+ * IN1 = D5, IN2 = D3. The LUT0 output is PA3 (Tachi: D3 / Tsurugi: D19 /
+ * Kunai: D2); alternate output PA6 (Tachi: D15 / Tsurugi: D2 / Kunai: D8). */
+
 #include <Logic.h>
 
 void setup() {
@@ -38,8 +45,8 @@ void setup() {
   // Logic block 0 has three inputs, PA0, PA1 and PA2.
   // It has one output, PA3, but can be swapped to PA6 if needed
   Logic0.enable = true;                 // Enable logic block 0
-  Logic0.input1 = in::input_pullup;     // Set PA1 as input with pullup
-  Logic0.input2 = in::input_pullup;     // Set PA2 as input with pullup
+  Logic0.input1 = in::input_pullup;     // IN1 = PA1 (Kunai: D5; crystal on Tachi/Tsurugi)
+  Logic0.input2 = in::input_pullup;     // IN2 = PA2 (Tachi: D2 / Tsurugi: D18 / Kunai: D3)
   // Logic0.output_swap = out::pin_swap; // Uncomment this line to route the output to alternate location, PA6
   Logic0.output = out::enable;          // Enable logic block 0 output pin PA3
   Logic0.filter = filter::disable;      // No output filter enabled

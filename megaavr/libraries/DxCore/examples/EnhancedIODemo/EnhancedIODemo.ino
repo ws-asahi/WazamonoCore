@@ -2,8 +2,8 @@
                        \\   Enhanced I/O API Demo   //
                         ^^-------------------------^^
 
-The hardware in modern AVR devices (Dx, tinyAVR 0/1/2, mega 0-series) is more
-sophisticated than that which was featured in previous AVR products. This core
+The I/O hardware in the AVR DU-series is more sophisticated than that which
+was featured in classic AVR products. This core
 provides a few simple I/O functions to take advantage of the new pin I/O
 capabilities. This file demonstrates their function and calling conventions in
 brief.
