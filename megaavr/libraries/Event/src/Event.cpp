@@ -86,6 +86,52 @@ static bool _port_evgen_in_use(uint8_t gen_value) {
       return true;
     }
   #endif
+  /* WazamonoCore extension: also treat the generator as in use if any event channel REGISTER
+   * currently selects it. Board-level init code (e.g. wazamono_tsurugi_init.cpp, which drives
+   * the D13 LED mirror from PORTD EVGEN0 via EVSYS channel 0) configures EVSYS with raw
+   * register writes that the object scan above cannot see. Since stop() writes 0 to the
+   * channel register, a nonzero register only ever reflects a deliberately configured route,
+   * which must not be stolen. */
+  #if defined(EVSYS_CHANNEL0)
+    if (EVSYS_CHANNEL0 == gen_value) {
+      return true;
+    }
+  #endif
+  #if defined(EVSYS_CHANNEL1)
+    if (EVSYS_CHANNEL1 == gen_value) {
+      return true;
+    }
+  #endif
+  #if defined(EVSYS_CHANNEL2)
+    if (EVSYS_CHANNEL2 == gen_value) {
+      return true;
+    }
+  #endif
+  #if defined(EVSYS_CHANNEL3)
+    if (EVSYS_CHANNEL3 == gen_value) {
+      return true;
+    }
+  #endif
+  #if defined(EVSYS_CHANNEL4)
+    if (EVSYS_CHANNEL4 == gen_value) {
+      return true;
+    }
+  #endif
+  #if defined(EVSYS_CHANNEL5)
+    if (EVSYS_CHANNEL5 == gen_value) {
+      return true;
+    }
+  #endif
+  #if defined(EVSYS_CHANNEL6)
+    if (EVSYS_CHANNEL6 == gen_value) {
+      return true;
+    }
+  #endif
+  #if defined(EVSYS_CHANNEL7)
+    if (EVSYS_CHANNEL7 == gen_value) {
+      return true;
+    }
+  #endif
   return false;
 }
 
@@ -670,61 +716,61 @@ Event& Event::assign_generator(event::gen::generator_t event_generator)
   else
   {
     #if defined(EVSYS_CHANNEL9)
-      if (Event9.get_generator() == event::gen::disable) {
+      if (Event9.get_generator() == event::gen::disable && EVSYS_CHANNEL9 == 0) { // WazamonoCore: register check protects raw-register users (board init)
         Event9.set_generator(event_generator);
         return Event9;
       } else
     #endif
     #if defined(EVSYS_CHANNEL8)
-      if (Event8.get_generator() == event::gen::disable) {
+      if (Event8.get_generator() == event::gen::disable && EVSYS_CHANNEL8 == 0) { // WazamonoCore: register check protects raw-register users (board init)
         Event8.set_generator(event_generator);
         return Event8;
       } else
     #endif
     #if defined(EVSYS_CHANNEL7)
-      if (Event7.get_generator() == event::gen::disable) {
+      if (Event7.get_generator() == event::gen::disable && EVSYS_CHANNEL7 == 0) { // WazamonoCore: register check protects raw-register users (board init)
         Event7.set_generator(event_generator);
         return Event7;
       } else
     #endif
     #if defined(EVSYS_CHANNEL6)
-      if (Event6.get_generator() == event::gen::disable) {
+      if (Event6.get_generator() == event::gen::disable && EVSYS_CHANNEL6 == 0) { // WazamonoCore: register check protects raw-register users (board init)
         Event6.set_generator(event_generator);
         return Event6;
       } else
     #endif
     #if defined(EVSYS_CHANNEL5)
-      if (Event5.get_generator() == event::gen::disable) {
+      if (Event5.get_generator() == event::gen::disable && EVSYS_CHANNEL5 == 0) { // WazamonoCore: register check protects raw-register users (board init)
         Event5.set_generator(event_generator);
         return Event5;
       } else
     #endif
     #if defined(EVSYS_CHANNEL4)
-      if (Event4.get_generator() == event::gen::disable) {
+      if (Event4.get_generator() == event::gen::disable && EVSYS_CHANNEL4 == 0) { // WazamonoCore: register check protects raw-register users (board init)
         Event4.set_generator(event_generator);
         return Event4;
       } else
     #endif
     #if defined(EVSYS_CHANNEL3)
-      if (Event3.get_generator() == event::gen::disable) {
+      if (Event3.get_generator() == event::gen::disable && EVSYS_CHANNEL3 == 0) { // WazamonoCore: register check protects raw-register users (board init)
         Event3.set_generator(event_generator);
         return Event3;
       } else
     #endif
     #if defined(EVSYS_CHANNEL2)
-      if (Event2.get_generator() == event::gen::disable) {
+      if (Event2.get_generator() == event::gen::disable && EVSYS_CHANNEL2 == 0) { // WazamonoCore: register check protects raw-register users (board init)
         Event2.set_generator(event_generator);
         return Event2;
       } else
     #endif
     #if defined(EVSYS_CHANNEL1)
-      if (Event1.get_generator() == event::gen::disable) {
+      if (Event1.get_generator() == event::gen::disable && EVSYS_CHANNEL1 == 0) { // WazamonoCore: register check protects raw-register users (board init)
         Event1.set_generator(event_generator);
         return Event1;
       } else
     #endif
     #if defined(EVSYS_CHANNEL0)
-      if (Event0.get_generator() == event::gen::disable) {
+      if (Event0.get_generator() == event::gen::disable && EVSYS_CHANNEL0 == 0) { // WazamonoCore: register check protects raw-register users (board init)
         Event0.set_generator(event_generator);
         return Event0;
       } else
