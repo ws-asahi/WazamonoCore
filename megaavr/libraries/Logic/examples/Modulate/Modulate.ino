@@ -43,19 +43,19 @@
 | this that are never used in "real life") there is never a right time  |
 | to refer to them.                                                     |
 ************************************************************************/
-/* fate above noted has come to pass, so the stupid ifdef is so we can pick the right pin on DUs */
-
-
-#if defined(__AVR_DU__)
-  #if (_AVR_PINCOUNT > 14)
-    #define NEWMUX 0 /* PORTA on DU with >14 pins */
-    #define PIN_TCA_WO2 PIN_PA2
-  #else
-    #error "This sketch isn't expected to compile for the DU14"
-  #endif
+/* The carrier comes out of TCA0 WO2, so the physical pin follows each
+ * board's PWM port mux. */
+#if defined(WAZAMONO_BOARD_TACHI)
+  #define NEWMUX PORTMUX_TCA0_PORTF_gc
+  #define PIN_TCA_WO2 7                   // D7 (PF2, TCA0 WO2)
+#elif defined(WAZAMONO_BOARD_TSURUGI)
+  #define NEWMUX PORTMUX_TCA0_PORTD_gc
+  #define PIN_TCA_WO2 9                   // D9 (PD2, TCA0 WO2)
+#elif defined(WAZAMONO_BOARD_KUNAI)
+  #define NEWMUX PORTMUX_TCA0_PORTA_gc
+  #define PIN_TCA_WO2 3                   // D3 (PA2, TCA0 WO2)
 #else
-  #define NEWMUX 0x02 /* PORTC everywhere else */
-  #define PIN_TCA_WO2 PIN_PC2
+  #error "This example supports Wazamono boards only."
 #endif
 
 #include <Logic.h>
@@ -78,7 +78,7 @@ void setup() {
   // Start the AVR logic hardware
   Logic::start();
 
-  analogWrite(PIN_TCA_WO2, 128); // start TCA0 WO0 running
+  analogWrite(PIN_TCA_WO2, 128); // start TCA0 WO2 running
   TCB0.CTRLA = 0x01; // enabled with CLKPER as clock source
   TCB0.CTRLB = 0x07; // PWM8 mode, but output pin not enabled
   TCB0.CCMPL = 255; // 255 counts

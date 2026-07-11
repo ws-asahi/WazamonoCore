@@ -34,21 +34,19 @@
 void setup() {
   // Configure relevant comparator parameters
   #if !defined(MEGATINYCORE) || MEGATINYCORE_SERIES > 0
-  Comparator.input_p = comparator::in_p::in0;       // Use positive input 0 PD2 on DxC/PA7 on mTC.
+  Comparator.input_p = comparator::in_p::in0;       // Use positive input 0: in0 = PD2 (Tachi: A1 / Tsurugi: D9; not bonded out on Kunai - use in3/in4 there)
   Comparator.input_n = comparator::in_n::dacref;    // Connect the negative pin to the DACREF voltage
   Comparator.reference = comparator::ref::vref_2v5; // Set the DACREF voltage to 2.5V
   Comparator.dacref = 127;              // Gives us 1.24V -> (127 / 256) * 2.5V = 1.24V
   Comparator.hysteresis = comparator::hyst::large;  // Use a 50mV hysteresis
-  Comparator.output = comparator::out::enable;      // Enable output on PIN_PA5 (digital pin 1)
-  //                                    // or PIN_PA3 (digital pin 4) on ATtiny412/212)
+  Comparator.output = comparator::out::enable;      // Enable output on AC0 OUT = PA7 (Tachi: D4 / Tsurugi: D8 / Kunai: D0)
   #else
   /* for 0-series, there's no DACREF; instead, let's use the 2v5 reference */
   Comparator.input_p = comparator::in_p::in0;       // Use positive input 0 (PD2)
   Comparator.input_n = comparator::in_n::vref;      // Connect the negative pin to the DACREF voltage
   Comparator.reference = comparator::ref::vref_2v5; // Set the DACREF voltage to 2.5V
   Comparator.hysteresis = comparator::hyst::large;  // Use a 50mV hysteresis
-  Comparator.output = comparator::out::enable;      // Enable output on PIN_PA5 (digital pin 1)
-  //                                    // or PIN_PA3 (digital pin 4) on ATtiny402/202/)
+  Comparator.output = comparator::out::enable;      // Enable output on AC0 OUT = PA7 (Tachi: D4 / Tsurugi: D8 / Kunai: D0)
   #endif
 
   // Initialize comparator

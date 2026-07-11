@@ -33,24 +33,15 @@ void print_user_info(user::user_t my_user) {
 void setup() {
   MYSERIAL.begin(115200); // Initialize hardware serial port
 
-#if defined(PORT_EVGEN0SEL_gm)
-  /* Parts with the version 3 event system (EA/EB/DU-series): pins are routed through the port
-   * event generators (PORTx.EVGENCTRLA) by set_generator(pin); there are no genN:: namespaces.
-   * The DU-series has no EVOUTC, so EVOUTA is used here instead. */
-  Event2.set_generator((uint8_t)PIN_PD4); // Set pin PD4 as event generator
-  Event3.set_generator((uint8_t)PIN_PD5); // Set pin PD5 as event generator
+  /* The DU-series has the version 3 event system: pins are routed through the port
+   * event generators (PORTx.EVGENCTRLA) by set_generator(pin). Any pin can be a
+   * generator; the EVOUT pins are fixed by the PORTMUX. */
+  Event2.set_generator((uint8_t)8); // Set pin D8 as event generator
+  Event3.set_generator((uint8_t)9); // Set pin D9 as event generator
 
   // For more information about EVOUT, see the PORTMUX section in the datasheet
-  Event2.set_user(user::evouta_pin_pa2); // Set EVOUTA as event user
-  Event3.set_user(user::evoutd_pin_pd7); // Set EVOUTD (alternate pin PD7) as event user
-#else
-  Event2.set_generator(gen2::pin_pd4); // Set pin PD4 as event generator
-  Event3.set_generator(gen3::pin_pd5); // Set pin PD5 as event generator
-
-  // For more information about EVOUT, see the PORTMUX section in the datasheet
-  Event2.set_user(user::evoutc_pin_pc2); // Set EVOUTC as event user
-  Event3.set_user(user::evoutd_pin_pd7); // Set EVOUTD as event user
-#endif
+  Event2.set_user(user::evouta_pin_pa2); // EVOUTA = PA2 (Tachi: D2 / Tsurugi: D18 / Kunai: D3)
+  Event3.set_user(user::evoutd_pin_pd7); // EVOUTD-alt = PD7 (Tachi: D0 / Tsurugi: D7 / Kunai: D7)
 
   // Start event channels
   Event2.start();
@@ -60,11 +51,7 @@ void setup() {
 void loop() {
   // Print info about Event2 and its event user
   print_event_info(Event2);
-#if defined(PORT_EVGEN0SEL_gm)
   print_user_info(user::evouta_pin_pa2);
-#else
-  print_user_info(user::evoutc_pin_pc2); // (was user::evoute_pin_pc3, which never existed)
-#endif
 
   // Print info about Event3 and its event user
   print_event_info(Event3);

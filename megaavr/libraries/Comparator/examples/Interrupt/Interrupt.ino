@@ -50,7 +50,7 @@ void setup() {
   Serial.begin(115200);
 
   // Configure relevant comparator parameters
-  Comparator.input_p = comparator::in_p::in0;       // Use positive input 0 (PA7)
+  Comparator.input_p = comparator::in_p::in0;       // Use positive input 0: in0 = PD2 (Tachi: A1 / Tsurugi: D9; not bonded out on Kunai - use in3/in4 there)
   #if (defined(MEGATINYCORE) && MEGATINYCORE_SERIES == 0)
   Comparator.input_n = comparator::in_n::vref;      // 0-series has no DACREF, so use vref directly.
   #else

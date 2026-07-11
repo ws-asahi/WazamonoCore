@@ -27,9 +27,9 @@
 
 void setup() {
   // Configure relevant comparator parameters
-  Comparator.input_p = comparator::in_p::in0;      // Use positive input 0 (PD2/PA7)
+  Comparator.input_p = comparator::in_p::in0;      // Use positive input 0: in0 = PD2 (Tachi: A1 / Tsurugi: D9; not bonded out on Kunai - use in3/in4 there)
   Comparator.input_n = comparator::in_n::in0;      // Use negative input 0 (PD3/PA6)
-  Comparator.output = comparator::out::enable;     // Enable output - (PA7/PA5)
+    Comparator.output = comparator::out::enable;     // Enable output on AC0 OUT = PA7 (Tachi: D4 / Tsurugi: D8 / Kunai: D0)
 
   // Initialize comparator
   Comparator.init();
