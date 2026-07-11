@@ -68,6 +68,7 @@
  * NONCANONICAL_PIN_NUMBERS (our numbering does not follow port order). */
 #define DU_20PIN_PINOUT
 #define WAZAMONO_KUNAI_PINOUT
+#define WAZAMONO_BOARD_KUNAI 1  /* Board identification macro (matches bootloader convention) */
 #define NONCANONICAL_PIN_NUMBERS
 
          /*##  ### #   #  ###

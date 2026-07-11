@@ -79,6 +79,7 @@
  * pin number == port order (our numbering does not follow port order). */
 #define DU_32PIN_PINOUT
 #define WAZAMONO_TSURUGI_PINOUT
+#define WAZAMONO_BOARD_TSURUGI 1  /* Board identification macro (matches bootloader convention) */
 #define NONCANONICAL_PIN_NUMBERS
 
 /* ---- Digital pin number for each MCU pin (Uno R3 layout, D0..D19 contiguous) ---- */

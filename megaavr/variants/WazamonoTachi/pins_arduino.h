@@ -72,6 +72,7 @@
  * pin number == port order (our numbering does not follow port order). */
 #define DU_32PIN_PINOUT
 #define WAZAMONO_TACHI_PINOUT
+#define WAZAMONO_BOARD_TACHI 1  /* Board identification macro (matches bootloader convention) */
 #define NONCANONICAL_PIN_NUMBERS
 
          /*##  ### #   #  ###
