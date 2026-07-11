@@ -13,7 +13,7 @@
 #include "UART.h"
 #include "UART_private.h"
 
-#if defined(USART1)
+#if defined(USART1) && !defined(WAZAMONO_SERIAL1_IS_USART0)
   #if USE_ASM_TXC == 1
     ISR(USART1_TXC_vect, ISR_NAKED) {
       __asm__ __volatile__(
