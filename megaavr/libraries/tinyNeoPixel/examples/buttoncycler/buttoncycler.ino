@@ -5,7 +5,7 @@
 
 #include <tinyNeoPixel.h>
 
-#define BUTTON_PIN   PIN_PD4    // Digital IO pin connected to the button.
+#define BUTTON_PIN   8          // D8: digital IO pin connected to the button.
 // Chosen because this pin is omnipresent, so I can use this for compile-testing.
 // This will be
 // driven with a pull-up resistor so the switch should
@@ -22,7 +22,7 @@
 // No pin is inherently better or worse than any other for either of these purposes; it's all about what
 // other things you need pins for, and whether any of them are picky about which pins are used.
 
-#define PIXEL_PIN    PIN_PC3    // Digital IO pin connected to the NeoPixels
+#define PIXEL_PIN    9          // D9: digital IO pin connected to the NeoPixels
 
 #define PIXEL_COUNT 16
 

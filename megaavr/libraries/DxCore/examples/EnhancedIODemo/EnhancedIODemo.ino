@@ -21,14 +21,8 @@ resource to cooy+paste starting points from.
 
 ******************************************************************************/
 
-#if defined (MEGATINYCORE)
-  #define DEMO_PIN PIN_PA2
-  #define DEMO_PIN2 PIN_PA3
-#else
-  #define DEMO_PIN PIN_PD4
-  #define DEMO_PIN2 PIN_PD5
-
-#endif
+#define DEMO_PIN 9   // D9
+#define DEMO_PIN2 8  // D8
 
 void setup() {
 

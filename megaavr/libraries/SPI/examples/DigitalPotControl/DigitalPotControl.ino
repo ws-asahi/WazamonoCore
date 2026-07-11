@@ -29,8 +29,8 @@
 // inslude the SPI library:
 #include <SPI.h>
 
-// Set PIN_PC3 as the slave select for the digital pot; any pin can be used, but we want it to compile even on 8-pin devices as it is used in automated testing.
-const int slaveSelectPin = PIN_PC3; //[present on all DxCore parts, and thus will compile everywherer as part of automated testing.]
+// Use the board's SS pin as the slave select for the digital pot; any free pin can be used.
+const int slaveSelectPin = PIN_SPI_SS; // Tachi: D4 / Tsurugi: D10 / Kunai: D0
 
 void setup() {
   // set the slaveSelectPin as an output:

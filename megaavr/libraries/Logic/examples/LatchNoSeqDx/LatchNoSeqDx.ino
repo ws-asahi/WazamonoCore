@@ -18,12 +18,12 @@
 | input. Otherwise we need to use the event system.                     |
 |                                                                       |
 |                                           3-input     truth table:    |
-| We use CCL LUT event as our "feedback",   |PC1|PC3|CCL| Y |           |
-| PC1 is RESET and PC3 is SET, both         |---|---|---|---|           |
+| We use CCL LUT event as our "feedback",   |D8 |D9 |CCL| Y |           |
+| D8 is RESET and D9 is SET, both           |---|---|---|---|           |
 | active low                                | 0 | 0 | 0 | 0 |           |
 | Connect a button between those and Gnd    | 0 | 0 | 1 | 1 |           |
-| Pressing button on PC3 will set output    | 0 | 1 | 0 | 1 |           |
-| HIGH and pressing button on PC1 will set  | 0 | 1 | 1 | 1 |           |
+| Pressing button on D9 will set output     | 0 | 1 | 0 | 1 |           |
+| HIGH and pressing button on D8 will set   | 0 | 1 | 1 | 1 |           |
 | output LOW, and pressing neither will do  | 1 | 0 | 0 | 0 |           |
 | nothing.                                  | 1 | 0 | 1 | 0 |           |
 | We could even then fire an interrupt from | 1 | 1 | 0 | 0 |           |
@@ -35,37 +35,31 @@
 |***********************************************************************/
 
 
-// PC1 RESET, PC3 SET -> PC2 RESULT
+// D8 RESET, D9 SET -> PD7 RESULT (Tachi: D0 / Tsurugi: D7 / Kunai: D7)
 #include <Logic.h>
 #include <Event.h>
 
 void setup() {
 
   // low for reset
-  pinMode(PIN_PD4, INPUT_PULLUP);
-  Event2.set_generator(PIN_PD4);
+  pinMode(8, INPUT_PULLUP);          // D8
+  Event2.set_generator(8);
   Event2.set_user(user::ccl0_event_a);
   Event2.start();
 
   // low for set
-  pinMode(PIN_PC3, INPUT_PULLUP);
-  Event3.set_generator(PIN_PC3);
+  pinMode(9, INPUT_PULLUP);          // D9
+  Event3.set_generator(9);
   Event3.set_user(user::ccl0_event_b);
   Event3.start();
-#if !defined(__AVR_DU__)
   Event4.set_generator(gen::ccl0_out);
-  Event4.set_user(user::evoutc_pin_pc2);
+  Event4.set_user(user::evoutd_pin_pd7); // result on PD7 (Tachi: D0 / Tsurugi: D7 / Kunai: D7)
   Event4.start();
-#else // DU series doesn't have any other options on 14-pin parts
-  Event4.set_generator(gen::ccl0_out);
-  Event4.set_user(user::evoutd_pin_pd7);
-  Event4.start();
-#endif
 
   Logic0.enable = true;
   Logic0.input0 = in::feedback;
-  Logic0.input1 = in::event_a;            // PC1 as input1 (RESET)
-  Logic0.input2 = in::event_b;            // PC2 as input2 (SET)
+  Logic0.input1 = in::event_a;            // D8 as input1 (RESET)
+  Logic0.input2 = in::event_b;            // D9 as input2 (SET)
   Logic0.filter = filter::disable;        // No output filter enabled
   Logic0.truth = 0x8E;                    // Set truth table
   Logic0.init();                          // Initialize logic block 0

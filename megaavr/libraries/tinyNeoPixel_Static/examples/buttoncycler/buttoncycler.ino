@@ -10,16 +10,11 @@
 // No pin is inherently better or worse than any other for either of these purposes; it's all about what
 // other things you need pins for, and whether any of them are picky about which pins are used.
 
-#if _AVR_PINCOUNT == 14 // need to use a different pins on DD14
-  #define BUTTON_PIN    PIN_PD5    // Digital IO pin connected to the button.  This will be
-  // driven with a pull-up resistor so the switch should
-  // pull the pin to ground momentarily.  On a high -> low
-  // transition the button press logic will execute.
-  #define PIXEL_PIN    PIN_PD4
-#else
-  #define BUTTON_PIN    PIN_PA2
-  #define PIXEL_PIN     PIN_PA3    // Digital IO pin connected to the NeoPixels
-#endif
+#define BUTTON_PIN    8    // D8: digital IO pin connected to the button.  This will be
+// driven with a pull-up resistor so the switch should
+// pull the pin to ground momentarily.  On a high -> low
+// transition the button press logic will execute.
+#define PIXEL_PIN     9    // D9: digital IO pin connected to the NeoPixels
 
 #define PIXEL_COUNT 16
 

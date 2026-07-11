@@ -11,10 +11,8 @@
 #include <EEPROM.h>
 
 void setup() {
-  // initialize the LED pin as an output - skip if LED_BUILTIN is PIN_PA3 and using external clock source. We test for this to ensure that the sketch will compile successfully and can be used for CI testing
-  #if ((CLOCK_SOURCE & 0x03) == 2) || LED_BUILTIN != PIN_PA3
+  // initialize the LED pin as an output
   pinMode(LED_BUILTIN, OUTPUT);
-  #endif
   /*
    * Iterate through each byte of the EEPROM storage.
 
@@ -34,10 +32,8 @@ void setup() {
     EEPROM.write(i, 0xFF);
   }
 
-  // turn the LED on when we're done
-  #if ((CLOCK_SOURCE & 0x03) == 2) || LED_BUILTIN != PIN_PA3
+  // turn the LED on when we're done (note: LED_BUILTIN is active-LOW on Tachi)
   digitalWrite(LED_BUILTIN, HIGH);
-  #endif
 }
 
 void loop() {

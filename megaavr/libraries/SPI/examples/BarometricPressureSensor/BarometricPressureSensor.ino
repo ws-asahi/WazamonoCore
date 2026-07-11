@@ -37,8 +37,8 @@ const byte WRITE        = 0b00000010;   // SCP1000's write command
 
 // pins used for the connection with the sensor
 // the other you need are controlled by the SPI library):
-const int dataReadyPin  = PIN_PD7;  // not the best pins, but present on all parts - SPI itself can sometimes only have data on PD4-6, eg, 14-pin DU. The DU, since we compile test with xtal, doesn't have A0 or A1 available.
-const int chipSelectPin = PIN_PC3;  // C0-2 were claimed by the USB natives, and the only pins left are UPDI and Reset...
+const int dataReadyPin  = 8;           // D8: data-ready signal from the sensor
+const int chipSelectPin = PIN_SPI_SS;  // Tachi: D4 / Tsurugi: D10 / Kunai: D0
 
 void setup() {
   Serial.begin(9600);

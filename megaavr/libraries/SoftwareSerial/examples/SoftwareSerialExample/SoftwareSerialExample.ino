@@ -17,7 +17,7 @@
 */
 #include <SoftwareSerial.h>
 
-SoftwareSerial mySerial(PIN_PD5, PIN_PD4); // RX, TX
+SoftwareSerial mySerial(9, 8); // RX = D9, TX = D8
 
 void setup() {
   // Open serial communications and wait for port to open:
