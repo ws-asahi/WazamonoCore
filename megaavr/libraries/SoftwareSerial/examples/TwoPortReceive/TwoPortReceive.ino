@@ -26,11 +26,10 @@
 */
 
 #include <SoftwareSerial.h>
-// software serial #1: RX = digital pin 10, TX = digital pin 11
-SoftwareSerial portOne(10, 11);
+// software serial #1: RX = D10, TX = D2
+SoftwareSerial portOne(10, 2);
 
-// software serial #2: RX = digital pin 8, TX = digital pin 9
-// on the Mega, use other pins instead, since 8 and 9 don't work on the Mega
+// software serial #2: RX = D8, TX = D9
 SoftwareSerial portTwo(8, 9);
 
 void setup() {

@@ -2,16 +2,27 @@
   Yes, this library *really* can drive 12 servos from a single type B timer!
 */
 
-#include <Servo_DxCore.h>
+#include <Servo.h>
+
+/* Twelve pins that exist on each Wazamono board. Tachi has no D11-D13 and
+ * Kunai has no D11/D12, so the last slots differ per board. */
+#if defined(WAZAMONO_BOARD_TACHI)
+const byte servopins[12] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 14};
+#elif defined(WAZAMONO_BOARD_TSURUGI)
+const byte servopins[12] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+#elif defined(WAZAMONO_BOARD_KUNAI)
+const byte servopins[12] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13};
+#else
+  #error "This example supports Wazamono boards only."
+#endif
 
 Servo myservos[12];
 byte pos[12];
 char dir[12] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
 void setup() {
-  /*TCA0.SPLIT.CTRLA = 0;  // Why was that there? It doesn't seem to serve any purpose!     */
   for (byte i = 0; i < 12; i++) {
-    myservos[i].attach(i);
+    myservos[i].attach(servopins[i]);
     pos[i] = i * 15;
   }
 }
