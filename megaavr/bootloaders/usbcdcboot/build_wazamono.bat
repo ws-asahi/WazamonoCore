@@ -49,10 +49,10 @@ if not exist "%GCCBIN%\avr-gcc.exe" (
 set "PATH=%GCCBIN%;%PATH%"
 if not defined MAKE set MAKE=make
 
-REM            class             mcu        LEDport LEDpin board     LEDpol(AH|AL)
-call :build wazamonotachi     avr64du32  PORTD   5      TACHI   AL
-call :build wazamonotsurugi   avr64du32  PORTC   3      TSURUGI AH
-call :build wazamonokunai     avr32du20  PORTD   4      KUNAI   AL
+REM            class             mcu        LEDport LEDpin board     LEDpol(AH|AL) VREG(0|1)
+call :build wazamonotachi     avr64du32  PORTD   5      TACHI   AL 0
+call :build wazamonotsurugi   avr64du32  PORTC   3      TSURUGI AH 1
+call :build wazamonokunai     avr32du20  PORTD   4      KUNAI   AL 0
 
 echo.
 echo === collecting hex files into ..\hex\ ===
@@ -67,14 +67,16 @@ endlocal
 goto :eof
 
 :build
-REM  %1=class tag  %2=mcu  %3=LED port  %4=LED pin  %5=board tag  %6=LED pol (AH | AL)
+REM  %1=class tag  %2=mcu  %3=LED port  %4=LED pin  %5=board tag  %6=LED pol (AH | AL)  %7=VREG (0 | 1)
 set "POLFLAG="
 if /i "%~6"=="AH" set "POLFLAG=LED_AH=1"
 if /i "%~6"=="AL" set "POLFLAG=LED_AL=1"
+set "VREGVAL=%~7"
+if not defined VREGVAL set "VREGVAL=0"
 echo.
-echo ------ building %2  -^> usbcdcboot_%1.hex  (LED %3 %4, board %5 %6) ------
+echo ------ building %2  -^> usbcdcboot_%1.hex  (LED %3 %4, board %5 %6, VREG %VREGVAL%) ------
 del /q src\*.o 2>nul
 del /q usbcdcboot_%1.elf usbcdcboot_%1.hex usbcdcboot_%1.lst usbcdcboot_%1.map 2>nul
-"%MAKE%" MCU=%2 TARGET=usbcdcboot_%1 LED_PORT=%3 LED_PIN=%4 BOARD=%5 %POLFLAG% all
-"%MAKE%" MCU=%2 TARGET=usbcdcboot_%1 BOARD=%5 %POLFLAG% size
+"%MAKE%" MCU=%2 TARGET=usbcdcboot_%1 LED_PORT=%3 LED_PIN=%4 BOARD=%5 VREG=%VREGVAL% %POLFLAG% all
+"%MAKE%" MCU=%2 TARGET=usbcdcboot_%1 BOARD=%5 VREG=%VREGVAL% %POLFLAG% size
 goto :eof

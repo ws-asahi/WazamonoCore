@@ -72,6 +72,23 @@ ifneq ($(strip $(LED_PIN)),)
 CFLAGS += -DBL_LED_PIN=$(LED_PIN)
 endif
 
+# --- VUSB regulator (per-build) --------------------------------------
+# VREG=1:           enable the internal 5V->3.3V USB voltage regulator at
+#                   startup (5V VDD systems; power configurations 5b/5s).
+#                   Wazamono Tsurugi builds use this.
+# VREG=0 (default): leave the regulator off; the board feeds 3.3V into the
+#                   VUSB pin externally (configuration 3s). Wazamono Tachi
+#                   and Kunai builds use this.
+# NOTE: WazamonoCore defaults to VREG=0, the safe side for Tachi/Kunai
+#       hardware -- an accidental VREG=1 hex would make the internal
+#       regulator fight the external 3.3V LDO on VUSB. (Upstream DxCore
+#       defaults to VREG=1.) build_wazamono.sh/.bat always pass VREG
+#       explicitly, so this default only matters for manual `make` runs.
+VREG ?= 0
+ifeq ($(VREG),1)
+CFLAGS += -DUSB_VREG_INTERNAL
+endif
+
 # --- Board selection (per-build) ------------------------------------
 # Selects the per-board USB bootloader identity.  VID is shared (0x1209);
 # the PID and the USB product string differ per board (see src/usb_desc.h

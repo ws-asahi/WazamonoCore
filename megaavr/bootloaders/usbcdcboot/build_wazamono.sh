@@ -57,21 +57,22 @@ fi
 MAKE="${MAKE:-make}"
 TOOLROOT="${TOOLROOT:-}"
 
-build() {            # $1=class  $2=mcu  $3=LEDport  $4=LEDpin  $5=board  $6=LED polarity (AH | AL)
+build() {            # $1=class  $2=mcu  $3=LEDport  $4=LEDpin  $5=board  $6=LED polarity (AH | AL)  $7=VREG (0 | 1)
   local polflag=""
   if [ "${6:-}" = "AH" ]; then polflag="LED_AH=1"; fi
   if [ "${6:-}" = "AL" ]; then polflag="LED_AL=1"; fi
+  local vreg="${7:-0}"   # omitted -> 0 (safe: VREG off, external VUSB)
   echo ""
-  echo "------ building $2  ->  usbcdcboot_$1.hex  (LED $3 $4, board $5, pol ${6:-}) ------"
+  echo "------ building $2  ->  usbcdcboot_$1.hex  (LED $3 $4, board $5, pol ${6:-}, VREG $vreg) ------"
   rm -f src/*.o "usbcdcboot_$1".{elf,hex,lst,map} 2>/dev/null || true
-  $MAKE ${TOOLROOT:+TOOLROOT="$TOOLROOT"} MCU="$2" TARGET="usbcdcboot_$1" LED_PORT="$3" LED_PIN="$4" BOARD="$5" $polflag all
-  $MAKE ${TOOLROOT:+TOOLROOT="$TOOLROOT"} MCU="$2" TARGET="usbcdcboot_$1" BOARD="$5" $polflag size
+  $MAKE ${TOOLROOT:+TOOLROOT="$TOOLROOT"} MCU="$2" TARGET="usbcdcboot_$1" LED_PORT="$3" LED_PIN="$4" BOARD="$5" VREG="$vreg" $polflag all
+  $MAKE ${TOOLROOT:+TOOLROOT="$TOOLROOT"} MCU="$2" TARGET="usbcdcboot_$1" BOARD="$5" VREG="$vreg" $polflag size
 }
 
-#     class             mcu        LEDport LEDpin board     LEDpol(AH|AL)
-build wazamonotachi   avr64du32   PORTD   5      TACHI     AL
-build wazamonotsurugi avr64du32   PORTC   3      TSURUGI   AH
-build wazamonokunai   avr32du20   PORTD   4      KUNAI     AL
+#     class             mcu        LEDport LEDpin board     LEDpol(AH|AL) VREG
+build wazamonotachi   avr64du32   PORTD   5      TACHI     AL            0
+build wazamonotsurugi avr64du32   PORTC   3      TSURUGI   AH            1
+build wazamonokunai   avr32du20   PORTD   4      KUNAI     AL            0
 
 echo ""
 echo "=== collecting hex files into ../hex/ ==="
