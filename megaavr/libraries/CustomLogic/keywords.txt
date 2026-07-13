@@ -1,5 +1,6 @@
 CustomLogic	KEYWORD1
 CustomLogic1	KEYWORD1
+LogicType	KEYWORD1
 begin	KEYWORD2
 beginTruthTable	KEYWORD2
 end	KEYWORD2

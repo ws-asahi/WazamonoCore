@@ -9,7 +9,8 @@ AVR DUシリーズ内蔵のCCL(Configurable Custom Logic)を、SerialやSDと同
 
 void setup() {
   CustomLogic.begin(AND);                  // OUT = IN0 AND IN1
-  // CustomLogic.begin(OR, 3);             // 3入力OR
+  // CustomLogic.begin(OR, OR);            // 3入力OR: (IN0 OR IN1) OR IN2
+  // CustomLogic.begin(AND, OR);           // (IN0 AND IN1) OR IN2
   // CustomLogic.beginTruthTable(0x96, 3); // 任意の真理値表(3入力XOR)
 }
 
@@ -36,7 +37,8 @@ void loop() {
 
 | メソッド | 説明 |
 |---|---|
-| `begin(gate)` / `begin(gate, n)` | ゲートとして開始。`gate`は`AND/OR/XOR/NAND/NOR/XNOR/NOT`、`n`は入力数1〜3(省略時2、NOTは常に1) |
+| `begin(logic1)` | 2入力ゲート: OUT = IN0 (logic1) IN1。`LogicType`は`AND/OR/XOR/NAND/NOR/XNOR/NOT`(NOTはIN0のみの1入力インバータ) |
+| `begin(logic1, logic2)` | 3入力ロジック: OUT = (IN0 logic1 IN1) logic2 IN2。例: `begin(AND, OR)`=A・B+C(NOTは合成不可) |
 | `beginTruthTable(table, n)` | 真理値表を直接指定。bit iが「入力の並びが数値iのときの出力」(IN2=bit2, IN1=bit1, IN0=bit0) |
 | `read()` | OUTピンの現在の状態 |
 | `attachInterrupt(fn, mode)` | 出力変化で関数呼び出し(`RISING/FALLING/CHANGE`) |

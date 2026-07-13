@@ -12,7 +12,7 @@
  * gate that keeps working with zero CPU involvement:
  *
  *   CustomLogic.begin(AND);          // OUT = IN0 AND IN1
- *   CustomLogic.begin(OR, 3);        // OUT = IN0 OR IN1 OR IN2
+ *   CustomLogic.begin(AND, OR);      // OUT = (IN0 AND IN1) OR IN2
  *   CustomLogic.beginTruthTable(0x96, 3);   // any function of 3 inputs
  *
  * Units and pins (fixed by the CCL hardware):
@@ -37,26 +37,33 @@
   #error "CustomLogic supports Wazamono boards only."
 #endif
 
-/* Gate types for begin() */
-enum CustomLogicGate : uint8_t {
-  AND = 0,  /* OUT is HIGH while every input is HIGH            */
-  OR,       /* OUT is HIGH while at least one input is HIGH     */
-  XOR,      /* OUT is HIGH while an odd number of inputs are HIGH */
-  NAND,     /* inverted AND                                      */
-  NOR,      /* inverted OR                                       */
-  XNOR,     /* inverted XOR                                      */
-  NOT       /* OUT is the inverse of IN0 (single input)          */
+/* Logic operations for begin() */
+enum LogicType : uint8_t {
+  AND = 0,  /* HIGH while both sides are HIGH        */
+  OR,       /* HIGH while either side is HIGH        */
+  XOR,      /* HIGH while exactly one side is HIGH   */
+  NAND,     /* inverted AND                          */
+  NOR,      /* inverted OR                           */
+  XNOR,     /* inverted XOR                          */
+  NOT       /* inverter - only valid as begin(NOT), using IN0 alone */
 };
 
 class CustomLogicClass {
 public:
   CustomLogicClass(uint8_t lut, const uint8_t *pins); /* internal */
 
-  /* Turn this unit into a logic gate using the first numInputs input
-   * pins (1 to 3; NOT always uses just IN0). Unused inputs are ignored
-   * regardless of their pin state. The result appears on the OUT pin
-   * immediately and permanently - no code runs in loop(). */
-  bool begin(uint8_t gate, uint8_t numInputs = 2);
+  /* Two-input gate: OUT = IN0 (logic1) IN1. The unused IN2 is ignored
+   * regardless of its pin state. begin(NOT) makes a one-input inverter
+   * on IN0. The result appears on the OUT pin immediately and
+   * permanently - no code runs in loop(). */
+  bool begin(LogicType logic1);
+
+  /* Three-input logic, combining two operations left to right:
+   *   OUT = (IN0 logic1 IN1) logic2 IN2
+   * Examples: begin(OR, OR) is a 3-input OR; begin(AND, OR) is HIGH
+   * while both IN0 and IN1 are HIGH - or IN2 is HIGH; begin(XOR, XOR)
+   * is a 3-input parity. NOT cannot be combined (returns false). */
+  bool begin(LogicType logic1, LogicType logic2);
 
   /* Define the output for every input combination yourself. Bit i of
    * truthTable is the output when the inputs spell the number i

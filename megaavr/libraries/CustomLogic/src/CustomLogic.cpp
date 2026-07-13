@@ -22,27 +22,17 @@ static volatile uint8_t *lutBase(uint8_t lut) {
   return (&CCL.LUT0CTRLA) + (uint8_t)(lut << 2);
 }
 
-/* Build the truth table for a standard gate over the low numInputs bits. */
-static uint8_t makeTruth(uint8_t gate, uint8_t numInputs) {
-  uint8_t mask = (1 << numInputs) - 1;
-  uint8_t truth = 0;
-  for (uint8_t i = 0; i < 8; i++) {
-    uint8_t bits = i & mask;
-    uint8_t ones = __builtin_popcount(bits);
-    bool v = false;
-    switch (gate) {
-      case AND:  v = (bits == mask);  break;
-      case OR:   v = (bits != 0);     break;
-      case XOR:  v = (ones & 1);      break;
-      case NAND: v = (bits != mask);  break;
-      case NOR:  v = (bits == 0);     break;
-      case XNOR: v = !(ones & 1);     break;
-      case NOT:  v = !(bits & 1);     break;
-      default:   return 0;
-    }
-    if (v) truth |= (1 << i);
+/* One binary logic operation. NOT must be filtered out by the caller. */
+static bool applyOp(LogicType op, bool a, bool b) {
+  switch (op) {
+    case AND:  return  (a && b);
+    case OR:   return  (a || b);
+    case XOR:  return  (a != b);
+    case NAND: return !(a && b);
+    case NOR:  return !(a || b);
+    case XNOR: return  (a == b);
+    default:   return false;
   }
-  return truth;
 }
 
 /* ---- class ------------------------------------------------------------ */
@@ -74,10 +64,32 @@ bool CustomLogicClass::configure(uint8_t truth, uint8_t numInputs) {
   return true;
 }
 
-bool CustomLogicClass::begin(uint8_t gate, uint8_t numInputs) {
-  if (gate > NOT) return false;
-  if (gate == NOT) numInputs = 1;
-  return configure(makeTruth(gate, numInputs), numInputs);
+bool CustomLogicClass::begin(LogicType logic1) {
+  if (logic1 > NOT) return false;
+  if (logic1 == NOT) {
+    /* one-input inverter: OUT = !IN0 */
+    uint8_t truth = 0;
+    for (uint8_t i = 0; i < 8; i++) {
+      if (!(i & 1)) truth |= (1 << i);
+    }
+    return configure(truth, 1);
+  }
+  /* OUT = IN0 (logic1) IN1 */
+  uint8_t truth = 0;
+  for (uint8_t i = 0; i < 8; i++) {
+    if (applyOp(logic1, i & 1, i & 2)) truth |= (1 << i);
+  }
+  return configure(truth, 2);
+}
+
+bool CustomLogicClass::begin(LogicType logic1, LogicType logic2) {
+  if (logic1 >= NOT || logic2 >= NOT) return false; /* NOT cannot combine */
+  /* OUT = (IN0 logic1 IN1) logic2 IN2 */
+  uint8_t truth = 0;
+  for (uint8_t i = 0; i < 8; i++) {
+    if (applyOp(logic2, applyOp(logic1, i & 1, i & 2), i & 4)) truth |= (1 << i);
+  }
+  return configure(truth, 3);
 }
 
 bool CustomLogicClass::beginTruthTable(uint8_t truthTable, uint8_t numInputs) {
