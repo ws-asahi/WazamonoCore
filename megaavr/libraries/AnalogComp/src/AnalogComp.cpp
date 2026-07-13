@@ -51,25 +51,24 @@ void AnalogCompClass::applyPins() {
   if (!_useDacref) setPinAnalog(_minusPin, true);
 }
 
-bool AnalogCompClass::applyThreshold(double volts) {
-  /* Pick the smallest internal reference that can express the requested
-   * voltage, for the finest resolution: Vdacref = (DACREF / 256) * Vref */
-  struct { double v; uint8_t gc; } const refs[] = {
-    {1.024, VREF_REFSEL_1V024_gc},
-    {2.048, VREF_REFSEL_2V048_gc},
-    {2.500, VREF_REFSEL_2V500_gc},
-    {4.096, VREF_REFSEL_4V096_gc},
-  };
-  if (volts < 0) return false;
-  for (uint8_t i = 0; i < 4; i++) {
-    double maxv = refs[i].v * 255.0 / 256.0;
-    if (volts <= maxv + 1e-9) {
-      VREF.ACREF = VREF_ALWAYSON_bm | refs[i].gc;
-      AC0.DACREF = (uint8_t)(volts * 256.0 / refs[i].v + 0.5);
-      return true;
-    }
+bool AnalogCompClass::applyThreshold(uint8_t reference, uint8_t level) {
+  /* The analogReference() constants carry the VREF_REFSEL value in their
+   * high nibble; the threshold is Vth = Vref * level / 256 (DACREF). */
+  uint8_t refsel = (reference >> 4) & 0x0F;
+  switch (refsel) {
+    case VREF_REFSEL_1V024_gc:
+    case VREF_REFSEL_2V048_gc:
+    case VREF_REFSEL_4V096_gc:
+    case VREF_REFSEL_2V500_gc:
+    case VREF_REFSEL_VDD_gc:
+    case VREF_REFSEL_VREFA_gc:  /* external voltage on VREFA = PD7 */
+      break;
+    default:
+      return false;
   }
-  return false; /* above 4.08 V */
+  VREF.ACREF = VREF_ALWAYSON_bm | refsel;
+  AC0.DACREF = level;
+  return true;
 }
 
 /* ---- public API -------------------------------------------------------- */
@@ -85,9 +84,9 @@ bool AnalogCompClass::begin() {
   return true;
 }
 
-bool AnalogCompClass::begin(double thresholdVolts) {
+bool AnalogCompClass::begin(uint8_t reference, uint8_t level) {
   _useDacref = true;
-  if (!applyThreshold(thresholdVolts)) { _useDacref = false; return false; }
+  if (!applyThreshold(reference, level)) { _useDacref = false; return false; }
   if (_minusPin != 255) { setPinAnalog(_minusPin, false); _minusPin = 255; }
   return begin();
 }
@@ -121,8 +120,8 @@ bool AnalogCompClass::setInputs(uint8_t plusPin, uint8_t minusPin) {
   return true;
 }
 
-bool AnalogCompClass::setThreshold(double thresholdVolts) {
-  if (!applyThreshold(thresholdVolts)) return false;
+bool AnalogCompClass::setThreshold(uint8_t reference, uint8_t level) {
+  if (!applyThreshold(reference, level)) return false;
   if (_minusPin != 255) { setPinAnalog(_minusPin, false); _minusPin = 255; }
   _useDacref = true;
   if (_running) applyPins();

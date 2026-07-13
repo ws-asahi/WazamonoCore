@@ -5,6 +5,7 @@
  *
  * Plus input pin: Tachi A1 / Tsurugi D9 / Kunai D6
  * Modes: RISING (crosses upward), FALLING (crosses downward), CHANGE.
+ * The threshold here is half the supply: begin(VDD, 128) -> VDD * 128/256.
  */
 #include <AnalogComp.h>
 
@@ -16,7 +17,7 @@ void onCross() {
 
 void setup() {
   Serial.begin(115200);
-  AnalogComp.begin(1.65);                    // plus pin vs internal 1.65 V
+  AnalogComp.begin(VDD, 128);                // plus pin vs half of VDD
   AnalogComp.setHysteresis(AC_HYST_MEDIUM);  // important: avoids bursts of
                                              // interrupts from a noisy signal
   AnalogComp.attachInterrupt(onCross, RISING);

@@ -12,9 +12,10 @@
  * A single pre-instantiated object "AnalogComp" wraps AC0, in the same
  * spirit as Serial or SD:
  *
- *   AnalogComp.begin();            // compare plus pin vs minus pin
- *   AnalogComp.begin(2.5);         // compare plus pin vs internal 2.5 V
- *   if (AnalogComp.read()) ...     // true when plus > minus
+ *   AnalogComp.begin();                  // compare plus pin vs minus pin
+ *   AnalogComp.begin(INTERNAL2V5);       // compare plus pin vs internal 2.5 V
+ *   AnalogComp.begin(INTERNAL2V048, 128) // ... vs 2.048 V * 128/256 = 1.024 V
+ *   if (AnalogComp.read()) ...           // true when plus > minus
  *
  * Default input pins (fixed by the AC0 hardware mux):
  *              plus (+)             minus (-)
@@ -45,10 +46,15 @@ public:
   /* Start comparing the plus pin against the minus pin. */
   bool begin();
 
-  /* Start comparing the plus pin against an internal reference voltage
-   * (0 to 4.08 V, generated from DACREF). Returns false if the requested
-   * voltage is out of range. */
-  bool begin(double thresholdVolts);
+  /* Start comparing the plus pin against a reference voltage. Pass the
+   * same constants used with analogReference():
+   *   INTERNAL1V024 / INTERNAL2V048 / INTERNAL2V5 / INTERNAL4V096 /
+   *   VDD / EXTERNAL (VREFA pin = PD7)
+   * The optional level scales the threshold: Vth = Vref * level / 256
+   * (default 255, i.e. approximately the reference voltage itself).
+   * Example: begin(VDD, 128) trips at half the supply voltage.
+   * Returns false if the constant is not a valid reference. */
+  bool begin(uint8_t reference, uint8_t level = 255);
 
   /* Stop the comparator and release the pins. */
   void end();
@@ -65,9 +71,9 @@ public:
    * valid comparator input on this board. */
   bool setInputs(uint8_t plusPin, uint8_t minusPin);
 
-  /* Change the internal reference voltage (also switches the minus input
-   * to the internal reference). Returns false if out of range. */
-  bool setThreshold(double thresholdVolts);
+  /* Change the reference/threshold (also switches the minus input to the
+   * internal reference). Same arguments as begin(reference, level). */
+  bool setThreshold(uint8_t reference, uint8_t level = 255);
 
   /* Add hysteresis to suppress chatter near the crossing point:
    * AC_HYST_NONE / AC_HYST_SMALL (~10mV) / AC_HYST_MEDIUM (~25mV) /
@@ -89,7 +95,7 @@ public:
 
 private:
   void applyPins();
-  bool applyThreshold(double volts);
+  bool applyThreshold(uint8_t reference, uint8_t level);
   uint8_t _muxpos_gc = 0;   // set in begin() from defaults
   uint8_t _muxneg_gc = 0;
   uint8_t _plusPin  = 255;

@@ -7,12 +7,12 @@
  *   Tachi: D4 / Tsurugi: D8 / Kunai: D0
  *
  * Wire an LED (with a resistor) to the output pin and vary the voltage
- * on the plus input pin around 1.0 V to see it switch.
+ * on the plus input pin around 1.02 V to see it switch.
  */
 #include <AnalogComp.h>
 
 void setup() {
-  AnalogComp.begin(1.0);          // plus pin vs internal 1.0 V
+  AnalogComp.begin(INTERNAL1V024);   // plus pin vs internal 1.024 V
   AnalogComp.setHysteresis(AC_HYST_LARGE);
   AnalogComp.enableOutput();      // result appears on PA7
 }

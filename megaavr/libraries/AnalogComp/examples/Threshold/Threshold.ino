@@ -5,13 +5,15 @@
  * LED turns on while the plus pin is above it.
  *
  * Plus input pin: Tachi A1 / Tsurugi D9 / Kunai D6
- * The reference is generated from DACREF; any value from 0 to 4.08 V works.
+ * Pass the same constants used with analogReference(): INTERNAL1V024,
+ * INTERNAL2V048, INTERNAL2V5, INTERNAL4V096, VDD or EXTERNAL. An optional
+ * second argument scales the threshold: Vth = Vref * level / 256.
  */
 #include <AnalogComp.h>
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
-  AnalogComp.begin(2.5);                    // plus pin vs internal 2.5 V
+  AnalogComp.begin(INTERNAL2V5);            // plus pin vs internal 2.5 V
   AnalogComp.setHysteresis(AC_HYST_MEDIUM);
 }
 
