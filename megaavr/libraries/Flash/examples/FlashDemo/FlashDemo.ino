@@ -1,7 +1,5 @@
 #include <Flash.h>
 
-#define SWAP_SERIAL
-
 #define BASE_ADDRESS (PROGMEM_SIZE - (0x800))
 // This is 2048 bytes before the end of the flash
 
@@ -12,7 +10,11 @@ uint8_t testArray3[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   // Blink the LED for good measure too (note: LED_BUILTIN is active-LOW on Tachi)
-  Serial.begin(115200); // Serial is the USB CDC port on Wazamono boards - no pins, no swap
+  Serial.begin(115200); 
+  for (uint8_t i = 0; i < 40 && !Serial; i++) {
+    delay(50);                     /* give a USB CDC host time to attach */
+  }
+  delay(200);
   // Give the user a chance to connect to the serial port
   for (byte i = 3; i; i--) {
     digitalWrite(LED_BUILTIN, CHANGE);
@@ -23,7 +25,6 @@ void setup() {
   Demo();
   // Once we're done with the demo, we just sit here.
 }
-
 
 
 void Demo() {
