@@ -38,6 +38,7 @@ endif
 
 # --- Sources --------------------------------------------------------
 SRCS := src/main.c \
+        src/spm_entry.c \
         src/usb_min.c \
         src/usb_desc.c \
         src/cdc_min.c \
@@ -115,9 +116,20 @@ endif
 # automatically when -mmcu=avr64du32 is set, so we don't need any
 # explicit -B options here.
 
+# The application-callable SPM stub sits in the last 6 bytes of the boot
+# section: 'spm z+; ret' at BOOTSIZE-6 and an identification/version word
+# at BOOTSIZE-2 (see src/spm_entry.c).  --undefined keeps both alive
+# through --gc-sections.
+SPM_ADDR := 0x0FFA
+VER_ADDR := 0x0FFE
+
 LDFLAGS := -mmcu=$(MCU) \
            -Wl,--gc-sections \
            -Wl,--section-start=.text=$(BOOT_BASE) \
+           -Wl,--section-start=.spmtarg=$(SPM_ADDR) \
+           -Wl,--section-start=.blversion=$(VER_ADDR) \
+           -Wl,--undefined=bl_spm_entry \
+           -Wl,--undefined=bl_version \
            -Wl,-Map,$(TARGET).map \
            -mrelax
 # NOTE: we intentionally do NOT pass -nostartfiles.  The standard
@@ -143,9 +155,16 @@ LDFLAGS := -mmcu=$(MCU) \
 # by __do_copy_data (~0.3 KB of 8 KB RAM) and never depends on FLMAP.
 # Fully-mapped avrxmega3 parts (avr16/32du*) reject the option and do
 # not need it: their .rodata stays inside the contiguous 4 KB image.
+# Only avr-gcc >= 15 knows the option - and only that version needs it:
+# GCC <= 14 (e.g. DxCore's 7.3.0-atmel3.6.1-azduino toolchain, reachable
+# through TOOLROOT) already folds .rodata into the .data init image and
+# rejects the flag as unrecognised, aborting the build.
+CC_MAJOR := $(firstword $(subst ., ,$(shell $(CC) -dumpversion)))
 ifneq (,$(findstring avr64,$(MCU)))
+  ifneq ($(filter 15 16 17 18 19 20 21 22 23 24 25,$(CC_MAJOR)),)
 CFLAGS  += -mrodata-in-ram
 LDFLAGS += -mrodata-in-ram
+  endif
 endif
 
 # --- Build rules ----------------------------------------------------
@@ -158,7 +177,9 @@ $(TARGET).elf: $(OBJS)
 	$(SIZE) $@
 
 $(TARGET).hex: $(TARGET).elf
-	$(OBJCOPY) -O ihex -R .eeprom -R .fuse -R .signature -R .user_signatures $< $@
+	$(OBJCOPY) -O ihex -R .eeprom -R .fuse -R .signature -R .user_signatures \
+	           --set-section-flags .spmtarg=alloc,load \
+	           --set-section-flags .blversion=alloc,load $< $@
 
 $(TARGET).lst: $(TARGET).elf
 	$(OBJDUMP) -h -S $< > $@
