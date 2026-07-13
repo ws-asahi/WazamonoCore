@@ -45,7 +45,10 @@ enum LogicType : uint8_t {
   NAND,     /* inverted AND                          */
   NOR,      /* inverted OR                           */
   XNOR,     /* inverted XOR                          */
-  NOT       /* inverter - only valid as begin(NOT), using IN0 alone */
+  NOT,      /* inverter - only valid as begin(NOT), using IN0 alone */
+  NOP       /* no operation: begin(NOP) = buffer on IN0;
+             * begin(NOP, x) skips IN0 -> x applies to IN1 and IN2;
+             * begin(x, NOP) skips IN2 (same as begin(x)) */
 };
 
 class CustomLogicClass {
@@ -53,16 +56,21 @@ public:
   CustomLogicClass(uint8_t lut, const uint8_t *pins); /* internal */
 
   /* Two-input gate: OUT = IN0 (logic1) IN1. The unused IN2 is ignored
-   * regardless of its pin state. begin(NOT) makes a one-input inverter
-   * on IN0. The result appears on the OUT pin immediately and
-   * permanently - no code runs in loop(). */
+   * regardless of its pin state.
+   *   begin(NOT) makes a one-input inverter on IN0.
+   *   begin(NOP) makes a one-input buffer on IN0 (OUT follows IN0).
+   * The result appears on the OUT pin immediately and permanently -
+   * no code runs in loop(). */
   bool begin(LogicType logic1);
 
   /* Three-input logic, combining two operations left to right:
    *   OUT = (IN0 logic1 IN1) logic2 IN2
    * Examples: begin(OR, OR) is a 3-input OR; begin(AND, OR) is HIGH
    * while both IN0 and IN1 are HIGH - or IN2 is HIGH; begin(XOR, XOR)
-   * is a 3-input parity. NOT cannot be combined (returns false). */
+   * is a 3-input parity.
+   * NOP skips one side: begin(NOP, x) ignores IN0 and applies x to
+   * IN1 and IN2; begin(x, NOP) ignores IN2 (same as begin(x)).
+   * NOT cannot be combined, and (NOP, NOP) is invalid (returns false). */
   bool begin(LogicType logic1, LogicType logic2);
 
   /* Define the output for every input combination yourself. Bit i of
@@ -83,7 +91,7 @@ public:
   void detachInterrupt();
 
 private:
-  bool configure(uint8_t truth, uint8_t numInputs);
+  bool configure(uint8_t truth, uint8_t inputMask); /* bit n = INn used */
   const uint8_t *_pins;   /* IN0, IN1, IN2, OUT */
   uint8_t _lut;
   uint8_t _numInputs = 0;

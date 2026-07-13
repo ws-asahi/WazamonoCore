@@ -39,61 +39,73 @@ static bool applyOp(LogicType op, bool a, bool b) {
 CustomLogicClass::CustomLogicClass(uint8_t lut, const uint8_t *pins)
   : _pins(pins), _lut(lut) {}
 
-bool CustomLogicClass::configure(uint8_t truth, uint8_t numInputs) {
-  if (numInputs < 1 || numInputs > 3) return false;
+bool CustomLogicClass::configure(uint8_t truth, uint8_t inputMask) {
+  if (inputMask == 0 || inputMask > 0x07) return false;
   volatile uint8_t *base = lutBase(_lut);
 
   base[0] = 0;  /* disable this LUT: CTRLB/CTRLC/TRUTH are enable-protected */
 
-  /* Input pins: inputs get pull-ups so buttons to GND work out of the box;
-   * a driven logic signal simply overrides the pull-up. */
+  /* Input pins: used inputs get pull-ups so buttons to GND work out of
+   * the box; a driven logic signal simply overrides the pull-up. */
   for (uint8_t i = 0; i < 3; i++) {
-    pinMode(_pins[i], (i < numInputs) ? INPUT_PULLUP : INPUT);
+    pinMode(_pins[i], (inputMask & (1 << i)) ? INPUT_PULLUP : INPUT);
   }
 
-  base[1] = ((numInputs >= 1) ? CCL_INSEL0_IN0_gc : CCL_INSEL0_MASK_gc)   /* CTRLB */
-          | ((numInputs >= 2) ? CCL_INSEL1_IN1_gc : CCL_INSEL1_MASK_gc);
-  base[2] =  (numInputs >= 3) ? CCL_INSEL2_IN2_gc : CCL_INSEL2_MASK_gc;   /* CTRLC */
+  base[1] = ((inputMask & 0x01) ? CCL_INSEL0_IN0_gc : CCL_INSEL0_MASK_gc)   /* CTRLB */
+          | ((inputMask & 0x02) ? CCL_INSEL1_IN1_gc : CCL_INSEL1_MASK_gc);
+  base[2] =  (inputMask & 0x04) ? CCL_INSEL2_IN2_gc : CCL_INSEL2_MASK_gc;   /* CTRLC */
   base[3] = truth;                       /* TRUTH                 */
   base[0] = CCL_OUTEN_bm | CCL_ENABLE_bm; /* result drives the OUT pin */
 
   s_activeMask |= (1 << _lut);
   CCL.CTRLA |= CCL_ENABLE_bm;
-  _numInputs = numInputs;
+  _numInputs = __builtin_popcount(inputMask);
   _running = true;
   return true;
 }
 
 bool CustomLogicClass::begin(LogicType logic1) {
-  if (logic1 > NOT) return false;
-  if (logic1 == NOT) {
-    /* one-input inverter: OUT = !IN0 */
+  if (logic1 > NOP) return false;
+  if (logic1 == NOT || logic1 == NOP) {
+    /* one input: NOT = inverter on IN0, NOP = buffer on IN0 */
     uint8_t truth = 0;
     for (uint8_t i = 0; i < 8; i++) {
-      if (!(i & 1)) truth |= (1 << i);
+      bool in0 = (i & 1);
+      if ((logic1 == NOP) ? in0 : !in0) truth |= (1 << i);
     }
-    return configure(truth, 1);
+    return configure(truth, 0b001);
   }
   /* OUT = IN0 (logic1) IN1 */
   uint8_t truth = 0;
   for (uint8_t i = 0; i < 8; i++) {
     if (applyOp(logic1, i & 1, i & 2)) truth |= (1 << i);
   }
-  return configure(truth, 2);
+  return configure(truth, 0b011);
 }
 
 bool CustomLogicClass::begin(LogicType logic1, LogicType logic2) {
-  if (logic1 >= NOT || logic2 >= NOT) return false; /* NOT cannot combine */
-  /* OUT = (IN0 logic1 IN1) logic2 IN2 */
+  if (logic1 == NOT || logic2 == NOT) return false; /* NOT cannot combine   */
+  if (logic1 > NOP  || logic2 > NOP)  return false;
+  if (logic1 == NOP && logic2 == NOP) return false; /* meaningless          */
+  if (logic2 == NOP) return begin(logic1);          /* skip IN2 = 2-input   */
   uint8_t truth = 0;
+  if (logic1 == NOP) {
+    /* skip IN0: OUT = IN1 (logic2) IN2 */
+    for (uint8_t i = 0; i < 8; i++) {
+      if (applyOp(logic2, i & 2, i & 4)) truth |= (1 << i);
+    }
+    return configure(truth, 0b110);
+  }
+  /* OUT = (IN0 logic1 IN1) logic2 IN2 */
   for (uint8_t i = 0; i < 8; i++) {
     if (applyOp(logic2, applyOp(logic1, i & 1, i & 2), i & 4)) truth |= (1 << i);
   }
-  return configure(truth, 3);
+  return configure(truth, 0b111);
 }
 
 bool CustomLogicClass::beginTruthTable(uint8_t truthTable, uint8_t numInputs) {
-  return configure(truthTable, numInputs);
+  if (numInputs < 1 || numInputs > 3) return false;
+  return configure(truthTable, (1 << numInputs) - 1); /* IN0..IN(n-1) */
 }
 
 void CustomLogicClass::end() {

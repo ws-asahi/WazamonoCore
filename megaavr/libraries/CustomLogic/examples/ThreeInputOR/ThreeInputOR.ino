@@ -8,6 +8,7 @@
  *   begin(AND, AND)  -> IN0 AND IN1 AND IN2
  *   begin(AND, OR)   -> (IN0 AND IN1) OR IN2
  *   begin(XOR, XOR)  -> 3-input parity
+ *   begin(NOP, OR)   -> IN1 OR IN2  (IN0 unused)
  *
  * Pins of the CustomLogic unit:
  *            IN0        IN1        IN2        OUT

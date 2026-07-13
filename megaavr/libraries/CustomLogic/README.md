@@ -11,6 +11,8 @@ void setup() {
   CustomLogic.begin(AND);                  // OUT = IN0 AND IN1
   // CustomLogic.begin(OR, OR);            // 3入力OR: (IN0 OR IN1) OR IN2
   // CustomLogic.begin(AND, OR);           // (IN0 AND IN1) OR IN2
+  // CustomLogic.begin(NOP, OR);           // IN1 OR IN2(IN0不使用)
+  // CustomLogic.begin(NOP);               // IN0のバッファ(OUT=IN0)
   // CustomLogic.beginTruthTable(0x96, 3); // 任意の真理値表(3入力XOR)
 }
 
@@ -37,8 +39,8 @@ void loop() {
 
 | メソッド | 説明 |
 |---|---|
-| `begin(logic1)` | 2入力ゲート: OUT = IN0 (logic1) IN1。`LogicType`は`AND/OR/XOR/NAND/NOR/XNOR/NOT`(NOTはIN0のみの1入力インバータ) |
-| `begin(logic1, logic2)` | 3入力ロジック: OUT = (IN0 logic1 IN1) logic2 IN2。例: `begin(AND, OR)`=A・B+C(NOTは合成不可) |
+| `begin(logic1)` | 2入力ゲート: OUT = IN0 (logic1) IN1。`LogicType`は`AND/OR/XOR/NAND/NOR/XNOR/NOT/NOP`(NOT=IN0のインバータ、NOP=IN0のバッファ。いずれも1入力) |
+| `begin(logic1, logic2)` | 3入力ロジック: OUT = (IN0 logic1 IN1) logic2 IN2。例: `begin(AND, OR)`=A・B+C。**NOPで片側を省略可**: `begin(NOP, x)`=IN0不使用でIN1 (x) IN2、`begin(x, NOP)`=IN2不使用(`begin(x)`と同じ)。NOTは合成不可、(NOP, NOP)は無効 |
 | `beginTruthTable(table, n)` | 真理値表を直接指定。bit iが「入力の並びが数値iのときの出力」(IN2=bit2, IN1=bit1, IN0=bit0) |
 | `read()` | OUTピンの現在の状態 |
 | `attachInterrupt(fn, mode)` | 出力変化で関数呼び出し(`RISING/FALLING/CHANGE`) |
