@@ -371,10 +371,10 @@ struct USERSIGClass {
     const uint8_t *ptr = (const uint8_t *) &t;
     for (int count = sizeof(T); count; --count) {
       __USigwrite(idx++, *ptr++);   // Write the new byte with __USigwrite()
-      if (sizeof(T) > 4) {          // if we are writing something that's not a primitive
-        __USigflush(0);             // we will automatically commit
-      }
     }
+    if (sizeof(T) > 4) {            // if we are writing something that's not a primitive
+      __USigflush(0);               // we commit once - NOT once per byte, which would
+    }                               // burn one erase/write cycle of the whole USERROW per byte!
     return t;
   }
 };
