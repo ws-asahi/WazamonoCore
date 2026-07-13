@@ -2,7 +2,7 @@
  *
  * Compares the plus input pin against the minus input pin and prints the
  * result. The output is true while the plus voltage is above the minus
- * voltage - like an LM339 built into your AVR.
+ * voltage - a hardware voltage comparison with no ADC and no math.
  *
  * Default input pins:
  *            plus (+)         minus (-)

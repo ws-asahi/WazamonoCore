@@ -3,6 +3,12 @@
  * Part of WazamonoCore for the AVR DU-series Wazamono boards.
  * (C) 2026 Yusuke Shimizu - Workshop Asahi. LGPL 2.1.
  *
+ * Provenance: this library is an original, independent implementation
+ * written from the AVR64DU28/32 data sheet (DS40002548A) and the official
+ * Microchip device headers only. It does not use, include, or derive code
+ * from the DxCore/megaTinyCore "Comparator" library or any other
+ * comparator library.
+ *
  * A single pre-instantiated object "AnalogComp" wraps AC0, in the same
  * spirit as Serial or SD:
  *
