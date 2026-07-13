@@ -39,28 +39,93 @@ static bool applyOp(LogicType op, bool a, bool b) {
 CustomLogicClass::CustomLogicClass(uint8_t lut, const uint8_t *pins)
   : _pins(pins), _lut(lut) {}
 
-bool CustomLogicClass::configure(uint8_t truth, uint8_t inputMask) {
-  if (inputMask == 0 || inputMask > 0x07) return false;
+/* Is this LUT the even one of its pair? The CCL feeds back the output of the
+ * even LUT (the sequencer is disabled here), so only an even LUT can see its
+ * own output on the FEEDBACK input. */
+static inline bool isEvenLut(uint8_t lut) {
+  return (lut & 1) == 0;
+}
+
+/* The INSEL nibble for one input - identical encoding for INSEL0/1/2. */
+uint8_t CustomLogicClass::insel(uint8_t input) {
+  if (!(_inputMask & (1 << input))) {
+    return CCL_INSEL0_MASK_gc;            /* input not used by the logic */
+  }
+  switch (_source[input]) {
+    case LOGIC_ANALOG_COMP: return CCL_INSEL0_AC0_gc;
+    case LOGIC_EVENT_A:     return CCL_INSEL0_EVENTA_gc;
+    case LOGIC_EVENT_B:     return CCL_INSEL0_EVENTB_gc;
+    case LOGIC_OWN_OUTPUT:  return CCL_INSEL0_FEEDBACK_gc;  /* even LUT only */
+    case LOGIC_OTHER_UNIT:  /* LUT2 reaches LUT3 through LINK (LUT[n+1]);
+                             * LUT3 reaches LUT2 through FEEDBACK (even LUT). */
+                            return isEvenLut(_lut) ? CCL_INSEL0_LINK_gc
+                                                   : CCL_INSEL0_FEEDBACK_gc;
+    default:                return CCL_INSEL0_IN0_gc;       /* LOGIC_PIN */
+  }
+}
+
+void CustomLogicClass::apply() {
   volatile uint8_t *base = lutBase(_lut);
 
   base[0] = 0;  /* disable this LUT: CTRLB/CTRLC/TRUTH are enable-protected */
 
-  /* Input pins: used inputs get pull-ups so buttons to GND work out of
-   * the box; a driven logic signal simply overrides the pull-up. */
+  /* Pins: only an input that is actually fed from its pin gets claimed (with
+   * a pull-up, so buttons to GND work out of the box; a driven logic signal
+   * simply overrides it). Pins we do not use are left completely untouched -
+   * they stay available for other peripherals. */
   for (uint8_t i = 0; i < 3; i++) {
-    pinMode(_pins[i], (inputMask & (1 << i)) ? INPUT_PULLUP : INPUT);
+    bool wantPin = (_inputMask & (1 << i)) && (_source[i] == LOGIC_PIN);
+    if (wantPin) {
+      pinMode(_pins[i], INPUT_PULLUP);
+      _claimed |= (1 << i);
+    } else if (_claimed & (1 << i)) {
+      pinMode(_pins[i], INPUT);           /* release the pull-up we added */
+      _claimed &= ~(1 << i);
+    }
   }
 
-  base[1] = ((inputMask & 0x01) ? CCL_INSEL0_IN0_gc : CCL_INSEL0_MASK_gc)   /* CTRLB */
-          | ((inputMask & 0x02) ? CCL_INSEL1_IN1_gc : CCL_INSEL1_MASK_gc);
-  base[2] =  (inputMask & 0x04) ? CCL_INSEL2_IN2_gc : CCL_INSEL2_MASK_gc;   /* CTRLC */
-  base[3] = truth;                       /* TRUTH                 */
-  base[0] = CCL_OUTEN_bm | CCL_ENABLE_bm; /* result drives the OUT pin */
+  base[1] = insel(0) | (uint8_t)(insel(1) << 4);  /* CTRLB: INSEL0, INSEL1 */
+  base[2] = insel(2);                             /* CTRLC: INSEL2         */
+  base[3] = _truth;                               /* TRUTH                 */
+  base[0] = CCL_OUTEN_bm | CCL_ENABLE_bm;         /* drive the OUT pin     */
 
   s_activeMask |= (1 << _lut);
   CCL.CTRLA |= CCL_ENABLE_bm;
+}
+
+bool CustomLogicClass::configure(uint8_t truth, uint8_t inputMask) {
+  if (inputMask == 0 || inputMask > 0x07) return false;
+  _truth = truth;
+  _inputMask = inputMask;
   _numInputs = __builtin_popcount(inputMask);
+  apply();
   _running = true;
+  return true;
+}
+
+bool CustomLogicClass::setInput(uint8_t input, LogicInput source) {
+  if (input > 2) return false;
+  switch (source) {
+    case LOGIC_PIN:
+    case LOGIC_ANALOG_COMP:
+    case LOGIC_EVENT_A:
+    case LOGIC_EVENT_B:
+      break;
+    case LOGIC_OWN_OUTPUT:
+      /* Only the even LUT of a pair sees its own output on FEEDBACK. */
+      if (!isEvenLut(_lut)) return false;
+      break;
+    case LOGIC_OTHER_UNIT:
+      #if defined(WAZAMONO_BOARD_KUNAI)
+        return false;                    /* this board has a single unit */
+      #else
+        break;
+      #endif
+    default:
+      return false;
+  }
+  _source[input] = source;
+  if (_running) apply();                 /* take effect immediately */
   return true;
 }
 
@@ -111,7 +176,10 @@ bool CustomLogicClass::beginTruthTable(uint8_t truthTable, uint8_t numInputs) {
 void CustomLogicClass::end() {
   detachInterrupt();
   lutBase(_lut)[0] = 0;
-  for (uint8_t i = 0; i < 3; i++) pinMode(_pins[i], INPUT);
+  for (uint8_t i = 0; i < 3; i++) {
+    if (_claimed & (1 << i)) pinMode(_pins[i], INPUT);   /* only ours */
+  }
+  _claimed = 0;
   s_activeMask &= ~(1 << _lut);
   if (s_activeMask == 0) CCL.CTRLA &= ~CCL_ENABLE_bm;
   _running = false;

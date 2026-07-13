@@ -42,10 +42,54 @@ void loop() {
 | `begin(logic1)` | 2入力ゲート: OUT = IN0 (logic1) IN1。`LogicType`は`AND/OR/XOR/NAND/NOR/XNOR/NOT/NOP`(NOT=IN0のインバータ、NOP=IN0のバッファ。いずれも1入力) |
 | `begin(logic1, logic2)` | 3入力ロジック: OUT = (IN0 logic1 IN1) logic2 IN2。例: `begin(AND, OR)`=A・B+C。**NOPで片側を省略可**: `begin(NOP, x)`=IN0不使用でIN1 (x) IN2、`begin(x, NOP)`=IN2不使用(`begin(x)`と同じ)。NOTは合成不可、(NOP, NOP)は無効 |
 | `beginTruthTable(table, n)` | 真理値表を直接指定。bit iが「入力の並びが数値iのときの出力」(IN2=bit2, IN1=bit1, IN0=bit0) |
+| `setInputIN0(src)` / `setInputIN1(src)` / `setInputIN2(src)` | その入力の**取得元**を変更(既定は`LOGIC_PIN`)。`setInput(番号, src)`でも同じ |
 | `read()` | OUTピンの現在の状態 |
 | `attachInterrupt(fn, mode)` | 出力変化で関数呼び出し(`RISING/FALLING/CHANGE`) |
 | `detachInterrupt()` | 割り込み解除 |
 | `end()` | 停止してピンを解放 |
+
+## 入力の取得元(`LogicInput`)
+
+入力はピンからでなくても構いません。**チップ内部の配線**なので、ピンも配線もCPU時間も消費しません。
+
+| 定数 | 意味 |
+|---|---|
+| `LOGIC_PIN` | そのユニットのINnピン(**既定**) |
+| `LOGIC_ANALOG_COMP` | **AnalogCompの比較結果**(AC0出力)。`AnalogComp.begin()`するだけでよく、`enableOutput()`は不要 |
+| `LOGIC_OWN_OUTPUT` | **自分自身の出力**。ラッチや発振回路が作れる(CustomLogicのみ) |
+| `LOGIC_OTHER_UNIT` | **もう一方のユニットの出力**。2段構成の論理が作れる(Tachi/Tsurugiのみ) |
+| `LOGIC_EVENT_A` / `LOGIC_EVENT_B` | イベントシステム経由。**任意のピンや周辺機能**を入力にできる(Eventライブラリで設定) |
+
+```cpp
+// 電圧が2.5Vを超えている AND ボタンが押されていない → 出力HIGH(CPU不使用)
+AnalogComp.begin(INTERNAL2V5);
+CustomLogic.setInputIN0(LOGIC_ANALOG_COMP);
+CustomLogic.begin(AND);
+
+// 2段構成: (IN0₁ OR IN1₁) AND IN1₀   ※Tachi/Tsurugi
+CustomLogic1.begin(OR);
+CustomLogic.setInputIN0(LOGIC_OTHER_UNIT);
+CustomLogic.begin(AND);
+
+// 任意のピン(D8)をIN0へ、イベントシステム経由で       ※Eventライブラリ併用
+Event2.set_generator(8);
+Event2.set_user(user::ccl2_event_a);   // Kunaiは ccl0_event_a
+Event2.start();
+CustomLogic.setInputIN0(LOGIC_EVENT_A);
+CustomLogic.begin(AND);
+```
+
+**ピンを使わない入力は、そのピンに一切触れません**(プルアップも設定しません)。
+たとえばKunaiでIN0/IN1をイベント経由にすれば、重なっているI2Cピン(D4/D5)をそのまま
+I2Cとして使えます。
+
+### `LOGIC_OWN_OUTPUT`と`LOGIC_OTHER_UNIT`の関係
+
+CCLはLUTペアの**偶数側**の出力をフィードバックします。CustomLogicが偶数側
+(Tachi/Tsurugi=LUT2、Kunai=LUT0)なので自分の出力を見られますが、CustomLogic1は
+奇数側(LUT3)なので、そこで見えるのは**CustomLogicの出力**です。これはそのまま
+`LOGIC_OTHER_UNIT`の意味なので、`setInput()`は
+CustomLogic1での`LOGIC_OWN_OUTPUT`と、Kunaiでの`LOGIC_OTHER_UNIT`を`false`で拒否します。
 
 ## サンプル
 
@@ -54,14 +98,17 @@ void loop() {
 - **TruthTable** — 真理値表の直接指定(3入力XOR=0x96)
 - **EdgeInterrupt** — ゲート出力の変化で割り込み
 - **DualUnits** — 2ユニット同時動作(Tachi/Tsurugi)
+- **AnalogCompInput** — AnalogCompの結果を入力にする(電圧しきい値 AND ボタン)
+- **SetResetLatch** — 自分の出力を入力にしてSRラッチ(ハードだけで「記憶」)
 
 ## 注意
 
 - **AnalogCompとのピン共有(Tachi/Tsurugi)**: CustomLogicのIN2/OUT(PD2/PD3)は
-  AnalogCompの初期入力と同じピンです。同時に使う場合は
-  `AnalogComp.setInputs(PIN_PD6, PIN_PD7)`で退避するか、CustomLogic1を使ってください。
-- **KunaiのI2Cとの共有**: KunaiのCustomLogic(PA0〜PA3)はI2Cピン(D4/D5および
-  代替のD3/D2)と重なるため、Wireとの同時使用はできません。
+  AnalogCompの初期入力と同じピンです。ただし`AnalogComp.begin(INTERNAL2V5)`のように
+  **内蔵基準電圧と比較する場合は−入力(PD3)を使わない**ので衝突しません
+  (AnalogCompInputサンプル参照)。2入力ゲートならIN2のピン(PD2)にも触れません。
+- **KunaiのI2Cとの共有**: KunaiのCustomLogic(PA0〜PA3)はI2Cピンと重なります。
+  `setInputIN0(LOGIC_EVENT_A)`などでピンを使わない入力にすれば共存できます。
 - ゲートの応答はハードウェア直結です(フィルタなし)。チャタリングのある機械接点を
   割り込みで数える場合はその点に留意してください。
 

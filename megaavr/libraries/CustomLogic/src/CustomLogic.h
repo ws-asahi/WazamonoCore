@@ -51,6 +51,31 @@ enum LogicType : uint8_t {
              * begin(x, NOP) skips IN2 (same as begin(x)) */
 };
 
+/* Where an input comes from. Every input starts out as LOGIC_PIN, i.e. the
+ * unit's own IN0/IN1/IN2 pin - change it with setInputIN0/IN1/IN2().
+ *
+ * The other sources need no wire at all: they are internal connections
+ * inside the chip, so they cost no pin and no CPU time. */
+enum LogicInput : uint8_t {
+  LOGIC_PIN = 0,      /* the unit's own input pin (default)                    */
+  LOGIC_ANALOG_COMP,  /* the AnalogComp result (AC0) - just call
+                       * AnalogComp.begin(); no output pin is needed           */
+  LOGIC_OWN_OUTPUT,   /* this unit's own output - the way to build latches
+                       * (only on CustomLogic; see the note below)             */
+  LOGIC_OTHER_UNIT,   /* the other CustomLogic unit's output - two-stage logic
+                       * (Tachi and Tsurugi only)                              */
+  LOGIC_EVENT_A,      /* an event channel - the way to feed ANY pin or
+                       * peripheral into a LUT; set the channel up with the    */
+  LOGIC_EVENT_B       /* Event library (user::cclN_event_a / _event_b)         */
+};
+
+/* Note on LOGIC_OWN_OUTPUT: the CCL feeds back the output of the *even* LUT
+ * of each LUT pair. CustomLogic is that even LUT (LUT2 on Tachi/Tsurugi, LUT0
+ * on Kunai), so it can see its own output. CustomLogic1 is the odd LUT, so
+ * what it would see there is CustomLogic's output - which is exactly what
+ * LOGIC_OTHER_UNIT means. setInput() therefore rejects LOGIC_OWN_OUTPUT on
+ * CustomLogic1, and LOGIC_OTHER_UNIT on Kunai (which has a single unit). */
+
 class CustomLogicClass {
 public:
   CustomLogicClass(uint8_t lut, const uint8_t *pins); /* internal */
@@ -79,6 +104,16 @@ public:
    * makes a 3-input XOR (odd parity). */
   bool beginTruthTable(uint8_t truthTable, uint8_t numInputs = 3);
 
+  /* Choose where an input comes from (LOGIC_PIN by default). May be called
+   * before or after begin(); it takes effect immediately. Returns false if
+   * the source is not available for this unit on this board.
+   * An input that is not fed from a pin leaves that pin completely alone,
+   * so it stays free for other uses. */
+  bool setInput(uint8_t input, LogicInput source);   /* input = 0, 1 or 2 */
+  bool setInputIN0(LogicInput source) { return setInput(0, source); }
+  bool setInputIN1(LogicInput source) { return setInput(1, source); }
+  bool setInputIN2(LogicInput source) { return setInput(2, source); }
+
   /* Stop the unit and release its pins. */
   void end();
 
@@ -92,9 +127,15 @@ public:
 
 private:
   bool configure(uint8_t truth, uint8_t inputMask); /* bit n = INn used */
+  void apply();
+  uint8_t insel(uint8_t input);
   const uint8_t *_pins;   /* IN0, IN1, IN2, OUT */
   uint8_t _lut;
   uint8_t _numInputs = 0;
+  uint8_t _truth = 0;
+  uint8_t _inputMask = 0;
+  uint8_t _claimed = 0;   /* bit n = we set the pull-up on INn's pin */
+  LogicInput _source[3] = {LOGIC_PIN, LOGIC_PIN, LOGIC_PIN};
   bool _running = false;
 };
 
