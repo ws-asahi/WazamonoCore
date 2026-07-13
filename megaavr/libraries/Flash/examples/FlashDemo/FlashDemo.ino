@@ -12,11 +12,7 @@ uint8_t testArray3[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   // Blink the LED for good measure too (note: LED_BUILTIN is active-LOW on Tachi)
-  #if defined(SWAP_SERIAL)
-  // That can be defined to swap serial pins.
-  Serial.swap(1);
-  #endif
-  Serial.begin(115200);
+  Serial.begin(115200); // Serial is the USB CDC port on Wazamono boards - no pins, no swap
   // Give the user a chance to connect to the serial port
   for (byte i = 3; i; i--) {
     digitalWrite(LED_BUILTIN, CHANGE);

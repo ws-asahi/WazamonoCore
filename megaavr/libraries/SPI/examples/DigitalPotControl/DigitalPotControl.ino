@@ -36,7 +36,6 @@ void setup() {
   // set the slaveSelectPin as an output:
   pinMode(slaveSelectPin, OUTPUT);
   // initialize SPI:
-  // SPI.swap(...) uncomment and fill in a number if you need to use alternate pins.
   SPI.begin();
 }
 

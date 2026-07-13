@@ -73,7 +73,6 @@ void setup() {
   Wire.onReceive(receiveDataWire);
 
   // Initialize serial port - if you need to swap pins, remember to do so.
-  // MySerial.swap(1);
   MySerial.begin(115200);
 }
 

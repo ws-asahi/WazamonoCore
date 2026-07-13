@@ -43,7 +43,6 @@ const int chipSelectPin = PIN_SPI_SS;  // Tachi: D4 / Tsurugi: D10 / Kunai: D0
 void setup() {
   Serial.begin(9600);
   // start the SPI library:
-  //SPI.swap(...) uncomment and fill in a number if you need to use alternate pins.
   SPI.begin();
   // initialize the  data ready and chip select pins:
   pinMode(dataReadyPin, INPUT);
