@@ -8,6 +8,9 @@ setInput	KEYWORD2
 setInputIN0	KEYWORD2
 setInputIN1	KEYWORD2
 setInputIN2	KEYWORD2
+setOutput	KEYWORD2
+addOutput	KEYWORD2
+disableOutput	KEYWORD2
 end	KEYWORD2
 read	KEYWORD2
 attachInterrupt	KEYWORD2

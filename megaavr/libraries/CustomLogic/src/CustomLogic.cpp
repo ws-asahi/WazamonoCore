@@ -2,12 +2,13 @@
 #include "CustomLogic.h"
 
 /* ---- board unit -> LUT/pin assignment --------------------------------- */
+/* IN0, IN1, IN2, OUT, OUT-alt (NOT_A_PIN when the LUT has no alternate) */
 #if defined(WAZAMONO_BOARD_KUNAI)
-static const uint8_t unit0_pins[4] = {PIN_PA0, PIN_PA1, PIN_PA2, PIN_PA3}; /* D4, D5, D3 -> D2 */
+static const uint8_t unit0_pins[5] = {PIN_PA0, PIN_PA1, PIN_PA2, PIN_PA3, PIN_PA6};
 CustomLogicClass CustomLogic(0, unit0_pins);   /* LUT0 */
 #else /* Tachi / Tsurugi */
-static const uint8_t unit0_pins[4] = {PIN_PD0, PIN_PD1, PIN_PD2, PIN_PD3};
-static const uint8_t unit1_pins[4] = {PIN_PF0, PIN_PF1, PIN_PF2, PIN_PF3};
+static const uint8_t unit0_pins[5] = {PIN_PD0, PIN_PD1, PIN_PD2, PIN_PD3, PIN_PD6};
+static const uint8_t unit1_pins[5] = {PIN_PF0, PIN_PF1, PIN_PF2, PIN_PF3, NOT_A_PIN};
 CustomLogicClass CustomLogic(2, unit0_pins);   /* LUT2 */
 CustomLogicClass CustomLogic1(3, unit1_pins);  /* LUT3 */
 #endif
@@ -37,7 +38,65 @@ static bool applyOp(LogicType op, bool a, bool b) {
 
 /* ---- class ------------------------------------------------------------ */
 CustomLogicClass::CustomLogicClass(uint8_t lut, const uint8_t *pins)
-  : _pins(pins), _lut(lut) {}
+  : _pins(pins), _lut(lut), _readPin(pins[3]) {}
+
+/* ---- output routing --------------------------------------------------- */
+/* The event outputs and their pins are FIXED per board: each variant assigns
+ * exactly one pin per output (WAZAMONO_EVOUTx_PIN/_ALT, from the board's
+ * pin-configuration table). An absent macro = that output is not offered. */
+struct EvOut { uint8_t pin; uint8_t port; bool alt; };
+static const EvOut s_evouts[] = {
+  #if defined(WAZAMONO_EVOUTA_PIN)
+  {WAZAMONO_EVOUTA_PIN, 0, WAZAMONO_EVOUTA_ALT != 0},
+  #endif
+  #if defined(WAZAMONO_EVOUTD_PIN)
+  {WAZAMONO_EVOUTD_PIN, 1, WAZAMONO_EVOUTD_ALT != 0},
+  #endif
+  #if defined(WAZAMONO_EVOUTF_PIN)
+  {WAZAMONO_EVOUTF_PIN, 2, WAZAMONO_EVOUTF_ALT != 0},
+  #endif
+};
+
+static bool evoutFor(uint8_t pin, uint8_t *port, bool *alt) {
+  for (uint8_t i = 0; i < sizeof(s_evouts) / sizeof(s_evouts[0]); i++) {
+    if (s_evouts[i].pin == pin) {
+      *port = s_evouts[i].port;
+      *alt  = s_evouts[i].alt;
+      return true;
+    }
+  }
+  return false;
+}
+
+static volatile uint8_t *evoutUser(uint8_t port) {
+  if (port == 0) return &EVSYS.USEREVSYSEVOUTA;
+  if (port == 1) return &EVSYS.USEREVSYSEVOUTD;
+  return &EVSYS.USEREVSYSEVOUTF;
+}
+
+static uint8_t evoutBit(uint8_t port) {
+  if (port == 0) return PORTMUX_EVOUTA_bm;
+  if (port == 1) return PORTMUX_EVOUTD_bm;
+  return PORTMUX_EVOUTF_bm;
+}
+
+/* Get an event channel carrying this generator. A channel that already does
+ * is reused; otherwise the first channel with no generator at all is taken.
+ * Channels that anything else has set up - the Event library, other
+ * libraries, or a sketch - have a non-zero generator and are never touched. */
+static uint8_t claimChannel(uint8_t generator) {
+  volatile uint8_t *ch = &EVSYS.CHANNEL0;
+  for (uint8_t i = 0; i < 6; i++) {
+    if (ch[i] == generator) return i;
+  }
+  for (uint8_t i = 0; i < 6; i++) {
+    if (ch[i] == 0) {
+      ch[i] = generator;
+      return i;
+    }
+  }
+  return 0xFF;                       /* all six channels are in use */
+}
 
 /* Is this LUT the even one of its pair? The CCL feeds back the output of the
  * even LUT (the sequencer is disabled here), so only an even LUT can see its
@@ -84,10 +143,17 @@ void CustomLogicClass::apply() {
     }
   }
 
+  /* Dedicated output pin: OUTEN overrides the port's own pin configuration,
+   * so no pinMode() is needed for it (data sheet, LUTnCTRLA.OUTEN). */
+  if (_pins[4] != NOT_A_PIN) {
+    if (_outMode == 1) PORTMUX.CCLROUTEA |=  (1 << _lut);   /* alternate pin */
+    else               PORTMUX.CCLROUTEA &= ~(1 << _lut);   /* default pin   */
+  }
+
   base[1] = insel(0) | (uint8_t)(insel(1) << 4);  /* CTRLB: INSEL0, INSEL1 */
   base[2] = insel(2);                             /* CTRLC: INSEL2         */
   base[3] = _truth;                               /* TRUTH                 */
-  base[0] = CCL_OUTEN_bm | CCL_ENABLE_bm;         /* drive the OUT pin     */
+  base[0] = ((_outMode == 2) ? 0 : CCL_OUTEN_bm) | CCL_ENABLE_bm;
 
   s_activeMask |= (1 << _lut);
   CCL.CTRLA |= CCL_ENABLE_bm;
@@ -127,6 +193,73 @@ bool CustomLogicClass::setInput(uint8_t input, LogicInput source) {
   _source[input] = source;
   if (_running) apply();                 /* take effect immediately */
   return true;
+}
+
+void CustomLogicClass::releaseEventOutputs() {
+  for (uint8_t p = 0; p < 3; p++) {
+    if (_evoutPin[p] == NOT_A_PIN) continue;
+    *evoutUser(p) = 0;                   /* disconnect the event output */
+    pinMode(_evoutPin[p], INPUT);        /* and give the pin back       */
+    _evoutPin[p] = NOT_A_PIN;
+  }
+  if (_evChannel != 0xFF) {
+    (&EVSYS.CHANNEL0)[_evChannel] = 0;   /* free the channel we took */
+    _evChannel = 0xFF;
+  }
+}
+
+bool CustomLogicClass::addOutput(uint8_t pin) {
+  /* The unit's own OUT pin, in either of its two positions. */
+  if (pin == _pins[3]) {
+    _outMode = 0;
+    _readPin = pin;
+    if (_running) apply();
+    return true;
+  }
+  if (_pins[4] != NOT_A_PIN && pin == _pins[4]) {
+    _outMode = 1;
+    _readPin = pin;
+    if (_running) apply();
+    return true;
+  }
+
+  /* Otherwise it has to be an event output pin - we set the event system up. */
+  uint8_t port;
+  bool alt;
+  if (!evoutFor(pin, &port, &alt)) return false;
+
+  uint8_t ch = claimChannel(EVSYS_CHANNEL_CCL_LUT0_gc + _lut);
+  if (ch == 0xFF) return false;          /* no event channel free */
+  _evChannel = ch;
+
+  if (alt) PORTMUX.EVSYSROUTEA |=  evoutBit(port);   /* pick the pin position */
+  else     PORTMUX.EVSYSROUTEA &= ~evoutBit(port);
+  *evoutUser(port) = ch + 1;             /* listen to our channel */
+  pinMode(pin, OUTPUT);
+
+  _evoutPin[port] = pin;
+  if (_outMode == 2 && _readPin == NOT_A_PIN) _readPin = pin;
+  return true;
+}
+
+bool CustomLogicClass::setOutput(uint8_t pin) {
+  releaseEventOutputs();
+  _outMode = 2;                          /* drop the dedicated pin as well  */
+  _readPin = NOT_A_PIN;                  /* addOutput() picks the new one   */
+  bool ok = addOutput(pin);
+  if (!ok) {                             /* unusable pin: restore the default */
+    _outMode = 0;
+    _readPin = _pins[3];
+  }
+  if (_running) apply();
+  return ok;
+}
+
+void CustomLogicClass::disableOutput() {
+  releaseEventOutputs();
+  _outMode = 2;
+  _readPin = NOT_A_PIN;
+  if (_running) apply();
 }
 
 bool CustomLogicClass::begin(LogicType logic1) {
@@ -175,6 +308,9 @@ bool CustomLogicClass::beginTruthTable(uint8_t truthTable, uint8_t numInputs) {
 
 void CustomLogicClass::end() {
   detachInterrupt();
+  releaseEventOutputs();
+  _outMode = 0;
+  _readPin = _pins[3];
   lutBase(_lut)[0] = 0;
   for (uint8_t i = 0; i < 3; i++) {
     if (_claimed & (1 << i)) pinMode(_pins[i], INPUT);   /* only ours */
@@ -186,7 +322,8 @@ void CustomLogicClass::end() {
 }
 
 bool CustomLogicClass::read() {
-  return digitalRead(_pins[3]) == HIGH;
+  if (_readPin == NOT_A_PIN) return false;   /* no output pin to look at */
+  return digitalRead(_readPin) == HIGH;
 }
 
 void CustomLogicClass::attachInterrupt(void (*callback)(), uint8_t mode) {

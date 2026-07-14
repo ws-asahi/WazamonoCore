@@ -16,14 +16,22 @@
  *   CustomLogic.beginTruthTable(0x96, 3);   // any function of 3 inputs
  *
  * Units and pins (fixed by the CCL hardware):
- *                 IN0        IN1        IN2        OUT
+ *                 IN0        IN1        IN2        OUT        OUT (alt)
  *   CustomLogic
- *     Tachi       A3 (PD0)   A2 (PD1)   A1 (PD2)   A0 (PD3)
- *     Tsurugi     D5 (PD0)   D6 (PD1)   D9 (PD2)   D10 (PD3)
- *     Kunai       D4 (PA0)   D5 (PA1)   D3 (PA2)   D2 (PA3)
+ *     Tachi       A3 (PD0)   A2 (PD1)   A1 (PD2)   A0 (PD3)   D1  (PD6)
+ *     Tsurugi     D5 (PD0)   D6 (PD1)   D9 (PD2)   D10 (PD3)  D13 (PD6)
+ *     Kunai       D4 (PA0)   D5 (PA1)   D3 (PA2)   D2 (PA3)   D8  (PA6)
  *   CustomLogic1  (not available on Kunai)
- *     Tachi       D5 (PF0)   D6 (PF1)   D7 (PF2)   D8 (PF3)
- *     Tsurugi     A0 (PF0)   A1 (PF1)   A2 (PF2)   A3 (PF3)
+ *     Tachi       D5 (PF0)   D6 (PF1)   D7 (PF2)   D8 (PF3)   -
+ *     Tsurugi     A0 (PF0)   A1 (PF1)   A2 (PF2)   A3 (PF3)   -
+ *
+ * The result can also be sent to the event-output pins - setOutput()/
+ * addOutput() take care of the event system for you. These pins are FIXED
+ * per board (one pin per event output, from the pin-configuration table):
+ *                 EVOUTA        EVOUTD        EVOUTF
+ *     Tachi       D2  (PA2)     D0 (PD7)      D7 (PF2)
+ *     Tsurugi     D8  (PA7)     D9 (PD2)      A2 (PF2)
+ *     Kunai       D0  (PA7)     D7 (PD7)      -
  *
  * Input pins are configured with pull-ups, so you can wire buttons
  * straight to GND; driven logic signals simply override the pull-up.
@@ -114,6 +122,21 @@ public:
   bool setInputIN1(LogicInput source) { return setInput(1, source); }
   bool setInputIN2(LogicInput source) { return setInput(2, source); }
 
+  /* Send the result to a pin. Any of the unit's output pins works: its
+   * dedicated OUT pin (the default), its alternate OUT pin, or one of the
+   * event-output pins - the event system is set up for you, no Event library
+   * needed. May be called before or after begin().
+   *   setOutput(pin)  - the result appears HERE (and nowhere else)
+   *   addOutput(pin)  - ...and here as well: the same result can drive
+   *                     several pins at once (the dedicated pin plus up to
+   *                     one event-output pin per port)
+   *   disableOutput() - no output pin at all (interrupt / chaining only)
+   * Returns false if the pin is not one of this unit's output pins, or if
+   * no event channel is free. */
+  bool setOutput(uint8_t pin);
+  bool addOutput(uint8_t pin);
+  void disableOutput();
+
   /* Stop the unit and release its pins. */
   void end();
 
@@ -129,13 +152,18 @@ private:
   bool configure(uint8_t truth, uint8_t inputMask); /* bit n = INn used */
   void apply();
   uint8_t insel(uint8_t input);
-  const uint8_t *_pins;   /* IN0, IN1, IN2, OUT */
+  void releaseEventOutputs();
+  const uint8_t *_pins;   /* IN0, IN1, IN2, OUT, OUT-alt */
   uint8_t _lut;
   uint8_t _numInputs = 0;
   uint8_t _truth = 0;
   uint8_t _inputMask = 0;
   uint8_t _claimed = 0;   /* bit n = we set the pull-up on INn's pin */
   LogicInput _source[3] = {LOGIC_PIN, LOGIC_PIN, LOGIC_PIN};
+  uint8_t _outMode = 0;   /* 0 = dedicated pin, 1 = alternate pin, 2 = none */
+  uint8_t _evoutPin[3] = {NOT_A_PIN, NOT_A_PIN, NOT_A_PIN}; /* EVOUTA/D/F */
+  uint8_t _evChannel = 0xFF;
+  uint8_t _readPin;       /* the pin read() looks at */
   bool _running = false;
 };
 
