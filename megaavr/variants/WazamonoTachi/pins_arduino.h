@@ -97,6 +97,19 @@
 #define PIN_PA6 (15)  // D15 SCK
 #define PIN_PA4 (16)  // D16 MOSI
 #define PIN_PD5 (17)  // D17 RX LED + LED_BUILTIN
+
+/* ---- Event output pins: FIXED by the board's pin-configuration table ----
+ * One pin per event output, no alternatives. Libraries (CustomLogic, and the
+ * Event library in its Wazamono form) route event outputs to these pins only.
+ *   EVOUTA -> PA2 = D2   (PORTMUX default; shared with I2C SDA)
+ *   EVOUTD -> PD7 = D0   (PORTMUX ALT1;    shared with Serial1 RX)
+ *   EVOUTF -> PF2 = D7   (PORTMUX default) */
+#define WAZAMONO_EVOUTA_PIN            (PIN_PA2)
+#define WAZAMONO_EVOUTA_ALT            (0)
+#define WAZAMONO_EVOUTD_PIN            (PIN_PD7)
+#define WAZAMONO_EVOUTD_ALT            (1)
+#define WAZAMONO_EVOUTF_PIN            (PIN_PF2)
+#define WAZAMONO_EVOUTF_ALT            (0)
 #define PIN_PD0 (18)  // D18 A0
 #define PIN_PD1 (19)  // D19 A1
 #define PIN_PD2 (20)  // D20 A2

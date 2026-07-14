@@ -125,12 +125,13 @@
  * One pin per event output, no alternatives. Libraries (CustomLogic, and the
  * Event library in its Wazamono form) route event outputs to these pins only.
  *   EVOUTA -> PA7 = D8   (PORTMUX ALT1; PA2/D18 stays I2C SDA)
- *   EVOUTF -> PF2 = A2   (PORTMUX default)
- *   EVOUTD -> none: the hardware offers only PD2 or PD7, and on this board
- *             PD2 (D9) is not assigned to EVSYS in the pin table while PD7
- *             is the AREF pin. */
+ *   EVOUTD -> PD2 = D9   (PORTMUX default; the hardware offers only PD2 or
+ *                         PD7, and PD7 is the AREF pin on this board)
+ *   EVOUTF -> PF2 = A2   (PORTMUX default) */
 #define WAZAMONO_EVOUTA_PIN            (PIN_PA7)
 #define WAZAMONO_EVOUTA_ALT            (1)
+#define WAZAMONO_EVOUTD_PIN            (PIN_PD2)
+#define WAZAMONO_EVOUTD_ALT            (0)
 #define WAZAMONO_EVOUTF_PIN            (PIN_PF2)
 #define WAZAMONO_EVOUTF_ALT            (0)
 

@@ -347,9 +347,9 @@ Method to connect an event user to an event generator. Note that a generator can
 
 #### Usage
 ```c++
-Event0.set_generator(gen0::pin_pa0); // Set pin PA0` as event generator for Event0
-Event0.set_user(user::evoutc);       // Set EVOUTC (pin PC2) as event user
-Event0.set_user(user::ccl0_event_a); // Also set CCL LUT0 Event A as event user
+Event2.set_generator((uint8_t)8);       // Set pin D8 as event generator for Event2
+Event2.set_user(user::evoutd_pin_pd7);  // Set EVOUTD (the fixed event-output pin) as event user
+Event2.set_user(user::ccl2_event_a);    // Also set CCL LUT2 Event A as event user
 ```
 
 ### set_user_pin()

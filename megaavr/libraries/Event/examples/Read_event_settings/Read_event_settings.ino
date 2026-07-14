@@ -36,15 +36,30 @@ void setup() {
   /* The DU-series has the version 3 event system: pins are routed through the port
    * event generators (PORTx.EVGENCTRLA) by set_generator(pin). Any pin can be a
    * generator; the EVOUT pins are fixed by the PORTMUX. */
+  #if defined(WAZAMONO_BOARD_TSURUGI)
+  Event2.set_generator((uint8_t)5); // Set pin D5 as event generator (D8 = PA7 is the EVOUTA pin here)
+  #else
   Event2.set_generator((uint8_t)8); // Set pin D8 as event generator
+  #endif
   Event3.set_generator((uint8_t)9); // Set pin D9 as event generator
 
   // For more information about EVOUT, see the PORTMUX section in the datasheet
-  Event2.set_user(user::evouta_pin_pa2); // EVOUTA = PA2 (Tachi: D2 / Tsurugi: D18 / Kunai: D3)
-  #if defined(WAZAMONO_BOARD_TSURUGI)
-  Event3.set_user(user::evoutf_pin_pf2); // EVOUTF = PF2 = A2/D16 (PD7 is the AREF pin on Tsurugi)
+  /* Event output pins are fixed per board (see the pin-configuration table):
+   *   Tachi   : EVOUTA = D2 (PA2),  EVOUTD = D0 (PD7),  EVOUTF = D7 (PF2)
+   *   Tsurugi : EVOUTA = D8 (PA7),  EVOUTD = D9 (PD2),  EVOUTF = A2 (PF2)
+   *   Kunai   : EVOUTA = D0 (PA7),  EVOUTD = D7 (PD7)
+   * On Tsurugi, Event3 demonstrates EVOUTF (its generator D9 is the EVOUTD pin). */
+  #if defined(WAZAMONO_BOARD_TACHI)
+  Event2.set_user(user::evouta_pin_pa2); // EVOUTA = PA2 = D2
+  Event3.set_user(user::evoutd_pin_pd7); // EVOUTD = PD7 = D0
+  #elif defined(WAZAMONO_BOARD_TSURUGI)
+  Event2.set_user(user::evouta_pin_pa7); // EVOUTA = PA7 = D8
+  Event3.set_user(user::evoutf_pin_pf2); // EVOUTF = PF2 = A2
+  #elif defined(WAZAMONO_BOARD_KUNAI)
+  Event2.set_user(user::evouta_pin_pa7); // EVOUTA = PA7 = D0
+  Event3.set_user(user::evoutd_pin_pd7); // EVOUTD = PD7 = D7
   #else
-  Event3.set_user(user::evoutd_pin_pd7); // EVOUTD-alt = PD7 (Tachi: D0 / Kunai: D7)
+  #error "This example supports Wazamono boards only."
   #endif
 
   // Start event channels
@@ -55,7 +70,11 @@ void setup() {
 void loop() {
   // Print info about Event2 and its event user
   print_event_info(Event2);
+  #if defined(WAZAMONO_BOARD_TSURUGI) || defined(WAZAMONO_BOARD_KUNAI)
+  print_user_info(user::evouta_pin_pa7);
+  #else
   print_user_info(user::evouta_pin_pa2);
+  #endif
 
   // Print info about Event3 and its event user
   print_event_info(Event3);

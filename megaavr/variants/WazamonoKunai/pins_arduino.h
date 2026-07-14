@@ -90,6 +90,17 @@
 #define PIN_PA4 (10)  // D10 A10 / SPI MOSI / TCA0 WO4
 //  no  D11..D12               (gap)
 #define PIN_PD4 (13)  // D13 LED_BUILTIN (on-board only)
+
+/* ---- Event output pins: FIXED by the board's pin-configuration table ----
+ * One pin per event output, no alternatives. Libraries (CustomLogic, and the
+ * Event library in its Wazamono form) route event outputs to these pins only.
+ *   EVOUTA -> PA7 = D0   (PORTMUX ALT1; shared with AC0 OUT / SPI SS)
+ *   EVOUTD -> PD7 = D7   (PORTMUX ALT1; shared with Serial1 RX)
+ *   EVOUTF -> none: PF2 is not bonded on the AVR32DU20. */
+#define WAZAMONO_EVOUTA_PIN            (PIN_PA7)
+#define WAZAMONO_EVOUTA_ALT            (1)
+#define WAZAMONO_EVOUTD_PIN            (PIN_PD7)
+#define WAZAMONO_EVOUTD_ALT            (1)
 #define PIN_PC3 (14)  // VBUS detect (not on a pad)
 #define PIN_PF6 (15)  // RESET
 #define PIN_PF7 (16)  // UPDI  (highest index -> sets NUM_DIGITAL_PINS = 17)

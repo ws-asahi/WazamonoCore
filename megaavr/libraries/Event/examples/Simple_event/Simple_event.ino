@@ -19,18 +19,32 @@
 void setup() {
   /* The DU-series has the version 3 event system: all channels are equal, and pins are
    * routed to a channel through the two port event generators (PORTx.EVGENCTRLA), which
-   * set_generator(pin) configures for you.
-   * Any pin can be the generator; we use D8 here. The event *output* pins however are
-   * fixed by the PORTMUX: EVOUTA = PA2 (Tachi: D2 / Tsurugi: D18 / Kunai: D3) and a
-   * second one on EVOUTD (see below). Both follow D8's state. */
+   * set_generator(pin) configures for you - any pin can be the generator.
+   * The event OUTPUT pins are fixed per board (see the board's pin-configuration
+   * table); both outputs below follow the generator pin's state:
+   *   Tachi   : generator D8,  EVOUTA = D2 (PA2),  EVOUTD = D0 (PD7)
+   *   Tsurugi : generator D10, EVOUTA = D8 (PA7),  EVOUTD = D9 (PD2)
+   *             (D8/D9 are this board's event-output pins, so the
+   *             generator moves to D10)
+   *   Kunai   : generator D8,  EVOUTA = D0 (PA7),  EVOUTD = D7 (PD7) */
+  #if defined(WAZAMONO_BOARD_TSURUGI)
+  Event1.set_generator((uint8_t)10);       // Set pin D10 as event generator
+  #else
   Event1.set_generator((uint8_t)8);        // Set pin D8 as event generator
+  #endif
 
   // For more information about EVOUT, see the PORTMUX section in the datasheet
-  Event1.set_user(user::evouta_pin_pa2);   // EVOUTA = PA2 (Tachi: D2 / Tsurugi: D18 / Kunai: D3)
-  #if defined(WAZAMONO_BOARD_TSURUGI)
-  Event1.set_user(user::evoutd_pin_pd2);   // EVOUTD = PD2 = D9 (PD7 is the AREF pin on Tsurugi)
+  #if defined(WAZAMONO_BOARD_TACHI)
+  Event1.set_user(user::evouta_pin_pa2);   // EVOUTA = PA2 = D2 (also I2C SDA)
+  Event1.set_user(user::evoutd_pin_pd7);   // EVOUTD = PD7 = D0 (also Serial1 RX)
+  #elif defined(WAZAMONO_BOARD_TSURUGI)
+  Event1.set_user(user::evouta_pin_pa7);   // EVOUTA = PA7 = D8
+  Event1.set_user(user::evoutd_pin_pd2);   // EVOUTD = PD2 = D9
+  #elif defined(WAZAMONO_BOARD_KUNAI)
+  Event1.set_user(user::evouta_pin_pa7);   // EVOUTA = PA7 = D0 (also AC0 OUT / SPI SS)
+  Event1.set_user(user::evoutd_pin_pd7);   // EVOUTD = PD7 = D7 (also Serial1 RX)
   #else
-  Event1.set_user(user::evoutd_pin_pd7);   // EVOUTD-alt = PD7 (Tachi: D0 / Kunai: D7)
+  #error "This example supports Wazamono boards only."
   #endif
 
   // Start the event channel
