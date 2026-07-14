@@ -80,17 +80,24 @@ static uint8_t evoutBit(uint8_t port) {
   return PORTMUX_EVOUTF_bm;
 }
 
+/* Channels the EventSystem library holds without a visible generator (its
+ * software connections). Weak: costs nothing when EventSystem is not linked. */
+extern "C" { extern __attribute__((weak)) uint8_t _wazamono_evsys_reserved; }
+
 /* Get an event channel carrying this generator. A channel that already does
- * is reused; otherwise the first channel with no generator at all is taken.
- * Channels that anything else has set up - the Event library, other
- * libraries, or a sketch - have a non-zero generator and are never touched. */
+ * is reused; otherwise the highest-numbered free channel is taken - scanning
+ * from the top keeps clear of the EventSystem objects, which are numbered
+ * from the bottom (EventSystem = channel 0). A channel is free only if no
+ * generator is set AND EventSystem does not hold it; channels that anything
+ * else has set up have a non-zero generator and are never touched. */
 static uint8_t claimChannel(uint8_t generator) {
   volatile uint8_t *ch = &EVSYS.CHANNEL0;
+  uint8_t reserved = (&_wazamono_evsys_reserved != nullptr) ? _wazamono_evsys_reserved : 0;
   for (uint8_t i = 0; i < 6; i++) {
     if (ch[i] == generator) return i;
   }
-  for (uint8_t i = 0; i < 6; i++) {
-    if (ch[i] == 0) {
+  for (int8_t i = 5; i >= 0; i--) {
+    if (ch[i] == 0 && !(reserved & (1 << i))) {
       ch[i] = generator;
       return i;
     }

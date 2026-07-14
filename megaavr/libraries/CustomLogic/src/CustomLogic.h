@@ -72,9 +72,9 @@ enum LogicInput : uint8_t {
                        * (only on CustomLogic; see the note below)             */
   LOGIC_OTHER_UNIT,   /* the other CustomLogic unit's output - two-stage logic
                        * (Tachi and Tsurugi only)                              */
-  LOGIC_EVENT_A,      /* an event channel - the way to feed ANY pin or
-                       * peripheral into a LUT; set the channel up with the    */
-  LOGIC_EVENT_B       /* Event library (user::cclN_event_a / _event_b)         */
+  LOGIC_EVENT_A,      /* an event connection - the way to feed ANY pin into
+                       * a LUT; wire it with the EventSystem library:          */
+  LOGIC_EVENT_B       /* EventSystem.connect(pin, EVENT_TO_LOGIC_A / _B)       */
 };
 
 /* Note on LOGIC_OWN_OUTPUT: the CCL feeds back the output of the *even* LUT

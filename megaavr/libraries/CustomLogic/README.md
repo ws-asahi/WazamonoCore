@@ -61,7 +61,7 @@ void loop() {
 | `LOGIC_ANALOG_COMP` | **AnalogCompの比較結果**(AC0出力)。`AnalogComp.begin()`するだけでよく、`enableOutput()`は不要 |
 | `LOGIC_OWN_OUTPUT` | **自分自身の出力**。ラッチや発振回路が作れる(CustomLogicのみ) |
 | `LOGIC_OTHER_UNIT` | **もう一方のユニットの出力**。2段構成の論理が作れる(Tachi/Tsurugiのみ) |
-| `LOGIC_EVENT_A` / `LOGIC_EVENT_B` | イベントシステム経由。**任意のピンや周辺機能**を入力にできる(Eventライブラリで設定) |
+| `LOGIC_EVENT_A` / `LOGIC_EVENT_B` | イベント接続経由。**任意のピン**を入力にできる(EventSystemライブラリで配線) |
 
 ```cpp
 // 電圧が2.5Vを超えている AND ボタンが押されていない → 出力HIGH(CPU不使用)
@@ -74,10 +74,8 @@ CustomLogic1.begin(OR);
 CustomLogic.setInputIN0(LOGIC_OTHER_UNIT);
 CustomLogic.begin(AND);
 
-// 任意のピン(D8)をIN0へ、イベントシステム経由で       ※Eventライブラリ併用
-Event2.set_generator(8);
-Event2.set_user(user::ccl2_event_a);   // Kunaiは ccl0_event_a
-Event2.start();
+// 任意のピン(D8)をIN0へ、イベント経由で       ※EventSystemライブラリ併用
+EventSystem.connect(8, EVENT_TO_LOGIC_A);
 CustomLogic.setInputIN0(LOGIC_EVENT_A);
 CustomLogic.begin(AND);
 ```
@@ -97,7 +95,7 @@ CustomLogic1での`LOGIC_OWN_OUTPUT`と、Kunaiでの`LOGIC_OTHER_UNIT`を`false
 ## 出力先(`setOutput` / `addOutput`)
 
 結果は専用OUTピン以外にも出せます。**イベントシステムの設定はライブラリが行う**ので、
-Eventライブラリを使う必要はありません。
+EventSystemライブラリを併用する必要はありません。
 
 | 出力経路 | 説明 |
 |---|---|
@@ -123,9 +121,8 @@ CustomLogic.addOutput(2);      // 専用OUTピン + D2 の2箇所へ同時出力
 最大で**専用OUTピン1本 + 上表のイベント出力ピン(各1本)**まで同時出力できます
 (Tachi/Tsurugiで最大4本、Kunaiで最大3本)。
 
-- イベントチャネルは**空きチャネルを自動で確保**します(生成源が未設定のもののみ)。
-  Eventライブラリで設定済みのチャネルや、**Tsurugiの変種がD13 LEDミラーに使っているCH0**は
-  決して奪いません。
+- イベントチャネルは**高番号側(CH5→)から空きを自動確保**します。EventSystemの接続
+  (EventSystem=CH0から順の固定番号)や、他の手段で設定済みのチャネルは決して奪いません。
 - **代替OUTピンの注意**: Tachiでは**D1(Serial1のTX)**、Tsurugiでは**D13(SPIのSCK)**と
   兼用です。TsurugiのD13はオンボードLEDにオペアンプ経由で接続されているため、D13へ出力すると
   **オンボードLEDが論理結果を表示**します(SPIとは併用不可)。TsurugiのPD7はAREFのため
