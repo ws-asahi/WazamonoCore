@@ -21,13 +21,17 @@ void setup() {
    * routed to a channel through the two port event generators (PORTx.EVGENCTRLA), which
    * set_generator(pin) configures for you.
    * Any pin can be the generator; we use D8 here. The event *output* pins however are
-   * fixed by the PORTMUX: EVOUTA = PA2 (Tachi: D2 / Tsurugi: D18 / Kunai: D3) and
-   * EVOUTD-alt = PD7 (Tachi: D0 / Tsurugi: D7 / Kunai: D7). Both follow D8's state. */
+   * fixed by the PORTMUX: EVOUTA = PA2 (Tachi: D2 / Tsurugi: D18 / Kunai: D3) and a
+   * second one on EVOUTD (see below). Both follow D8's state. */
   Event1.set_generator((uint8_t)8);        // Set pin D8 as event generator
 
   // For more information about EVOUT, see the PORTMUX section in the datasheet
   Event1.set_user(user::evouta_pin_pa2);   // EVOUTA = PA2 (Tachi: D2 / Tsurugi: D18 / Kunai: D3)
-  Event1.set_user(user::evoutd_pin_pd7);   // EVOUTD-alt = PD7 (Tachi: D0 / Tsurugi: D7 / Kunai: D7)
+  #if defined(WAZAMONO_BOARD_TSURUGI)
+  Event1.set_user(user::evoutd_pin_pd2);   // EVOUTD = PD2 = D9 (PD7 is the AREF pin on Tsurugi)
+  #else
+  Event1.set_user(user::evoutd_pin_pd7);   // EVOUTD-alt = PD7 (Tachi: D0 / Kunai: D7)
+  #endif
 
   // Start the event channel
   Event1.start();

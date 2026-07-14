@@ -87,11 +87,10 @@ static bool _port_evgen_in_use(uint8_t gen_value) {
     }
   #endif
   /* WazamonoCore extension: also treat the generator as in use if any event channel REGISTER
-   * currently selects it. Board-level init code (e.g. wazamono_tsurugi_init.cpp, which drives
-   * the D13 LED mirror from PORTD EVGEN0 via EVSYS channel 0) configures EVSYS with raw
-   * register writes that the object scan above cannot see. Since stop() writes 0 to the
-   * channel register, a nonzero register only ever reflects a deliberately configured route,
-   * which must not be stolen. */
+   * currently selects it. Code outside this library (board init, other libraries, or a sketch)
+   * may configure EVSYS with raw register writes that the object scan above cannot see. Since
+   * stop() writes 0 to the channel register, a nonzero register only ever reflects a
+   * deliberately configured route, which must not be stolen. */
   #if defined(EVSYS_CHANNEL0)
     if (EVSYS_CHANNEL0 == gen_value) {
       return true;

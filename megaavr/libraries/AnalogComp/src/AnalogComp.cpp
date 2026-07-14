@@ -18,8 +18,12 @@ static bool plusPinToMux(uint8_t pin, uint8_t *gc) {
   if (pin == PIN_PD2) { *gc = AC_MUXPOS_AINP0_gc; return true; }
   #endif
   if (pin == PIN_PD6) { *gc = AC_MUXPOS_AINP3_gc; return true; }
-  /* AINP4 = PC3 is intentionally not offered: it is the VBUS divider on
-   * Tachi/Kunai and the LED mirror on Tsurugi. */
+  #if defined(WAZAMONO_BOARD_TSURUGI)
+  /* AINP4 = PC3 = D7: a plain, VDD-driven GPIO on Tsurugi. */
+  if (pin == PIN_PC3) { *gc = AC_MUXPOS_AINP4_gc; return true; }
+  #else
+  /* AINP4 = PC3 is not offered here: it is the VBUS divider on Tachi/Kunai. */
+  #endif
   return false;
 }
 

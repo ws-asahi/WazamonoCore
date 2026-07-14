@@ -24,7 +24,8 @@ const PROGMEM_MAPPED uint8_t MyTimers[] = {
  * only to PORTA, PORTC (WO3 = PC3 only), PORTD and PORTF; the other rows are
  * padding so that indexing matches the PORTMUX register values.
  * PC3 is deliberately excluded: it is the VBUS divider input on Tachi/Kunai
- * and the CCL-driven LED mirror on Tsurugi, so PWM must not be driven there.
+ * on Tachi/Kunai, so PWM must not be driven there (on Tsurugi PC3 = D7, a
+ * plain GPIO, but TCA0 is muxed to PORTD so it is not a PWM pin anyway).
  */
 const PROGMEM_MAPPED uint8_t TCA0pinsets[] = {
   /* PORTA (mux 0) */

@@ -63,9 +63,10 @@ public:
   bool read();
 
   /* Select other input pins before or after begin(). Valid pins:
-   *   plus:  PD2 (Tachi A1 / Tsurugi D9), PD6 (Tachi D1* / Tsurugi D13 / Kunai D6)
+   *   plus:  PD2 (Tachi A1 / Tsurugi D9), PD6 (Tachi D1* / Tsurugi D13 / Kunai D6),
+   *          PC3 (Tsurugi D7 only)
    *   minus: PD3 (Tachi A0 / Tsurugi D10), PD0 (Tachi A3 / Tsurugi D5),
-   *          PD7 (Tachi D0 / Tsurugi D7 / Kunai D7)
+   *          PD7 (Tachi D0 / Kunai D7 / Tsurugi: the AREF pin)
    * (* Tachi D1/D0 are the Serial1 pins - usable when Serial1 is not.)
    * Returns false and leaves the setting unchanged if a pin is not a
    * valid comparator input on this board. */

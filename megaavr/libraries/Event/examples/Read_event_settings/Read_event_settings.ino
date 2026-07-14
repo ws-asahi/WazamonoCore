@@ -41,7 +41,11 @@ void setup() {
 
   // For more information about EVOUT, see the PORTMUX section in the datasheet
   Event2.set_user(user::evouta_pin_pa2); // EVOUTA = PA2 (Tachi: D2 / Tsurugi: D18 / Kunai: D3)
-  Event3.set_user(user::evoutd_pin_pd7); // EVOUTD-alt = PD7 (Tachi: D0 / Tsurugi: D7 / Kunai: D7)
+  #if defined(WAZAMONO_BOARD_TSURUGI)
+  Event3.set_user(user::evoutf_pin_pf2); // EVOUTF = PF2 = A2/D16 (PD7 is the AREF pin on Tsurugi)
+  #else
+  Event3.set_user(user::evoutd_pin_pd7); // EVOUTD-alt = PD7 (Tachi: D0 / Kunai: D7)
+  #endif
 
   // Start event channels
   Event2.start();
@@ -55,7 +59,11 @@ void loop() {
 
   // Print info about Event3 and its event user
   print_event_info(Event3);
+  #if defined(WAZAMONO_BOARD_TSURUGI)
+  print_user_info(user::evoutf_pin_pf2);
+  #else
   print_user_info(user::evoutd_pin_pd7);
+  #endif
 
   delay(5000);
 }

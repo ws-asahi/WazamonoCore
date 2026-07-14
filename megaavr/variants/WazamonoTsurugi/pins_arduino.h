@@ -21,13 +21,13 @@
  *   D4   PF4   (general I/O; no PWM - TCB0 is millis)       A10, AIN20
  *   D5   PD1   ~PWM(TCA0 WO1) | CCL                         A11, AIN1
  *   D6   PD0   ~PWM(TCA0 WO0) | CCL                         A12, AIN0
- *   D7   PD7   (general I/O; ex-AREF, VREFA disabled)       A13, AIN7
- *   D8   PA7   (general I/O, native 5V; ex-PC3 header slot) A14, AIN27
+ *   D7   PC3   (general I/O; VDD-driven, confirmed by test) A13, AIN31
+ *   D8   PA7   (general I/O)                                A14, AIN27
  *   D9   PD2   ~PWM(TCA0 WO2) | CCL | AC0 AINP0 | EVOUTD    A15, AIN2
  *   D10  PD3   ~PWM(TCA0 WO3) | CCL | AC0 AINN0 | (SS)      A16, AIN3
  *   D11  PD4   ~PWM(TCA0 WO4) | SPI MOSI                    A17, AIN4
  *   D12  PD5   ~PWM(TCA0 WO5) | SPI MISO                    A18, AIN5
- *   D13  PD6   SPI SCK | LED_BUILTIN (mirrored onto PC3)    A19, AIN6
+ *   D13  PD6   SPI SCK | LED_BUILTIN (op-amp buffered LED)  A19, AIN6
  *   D14  PF0   A0 | CCL                                     A0,  AIN16
  *   D15  PF1   A1 | CCL                                     A1,  AIN17
  *   D16  PF2   A2 | CCL | EVOUTF                            A2,  AIN18
@@ -35,7 +35,7 @@
  *   D18  PA2   A4 | SDA (I2C)                               A4,  AIN22
  *   D19  PA3   A5 | SCL (I2C)                               A5,  AIN23
  *   --- not exposed as a numbered Dn (appended so the arrays are complete) ---
- *        PC3   BUILTIN_LED driver (CCL LUT1 mirror of PD6)  index 20  (VUSB domain)
+ *        PD7   AREF (VREFA, external analog reference)      index 20
  *        PA0   XTALHF1 (24 MHz crystal)             index 21  (NOT_A_PIN)
  *        PA1   XTALHF2 (24 MHz crystal)             index 22  (NOT_A_PIN)
  *        PF6   RESET                                index 23
@@ -50,16 +50,18 @@
  *           (TCA0) and millis (TCB0) keep running (cf. Uno R3 Timer2 = D3+D11).
  *   SPI0  -> ALT4 (PD4 MOSI / PD5 MISO / PD6 SCK = D11/D12/D13). Board is SPI host;
  *           default CS exposed as PIN_SPI_SS = PD3 (D10, Uno convention). The ALT4
- *           hardware SS is PD7 (= D7); run SPI host with Client Select Disable
- *           (SPI0.CTRLB.SSD = 1) so a low on D7 cannot flip host -> client mode.
+ *           hardware SS is PD7 (= AREF here); run SPI host with Client Select
+ *           Disable (SPI0.CTRLB.SSD = 1) so the AREF level cannot flip host ->
+ *           client mode.
  *   TWI0  -> default (PA2 SDA / PA3 SCL) = D18/D19 = A4/A5 (Uno I2C convention).
  *   USART0-> Serial0, ALT1 (PA4 TX / PA5 RX) = D1/D0. (The Uno R3 D0/D1 UART.)
  *   USART1-> exists on the AVR DU but has NO usable pin position on Tsurugi
- *           (DU USART1 is only PD6/PD7, which are SPI SCK / D7 here). Inert.
- *   LED   -> on-board LED is driven by PC3, which hardware-mirrors PD6 (D13) via
- *           EVSYS -> CCL LUT1 (see wazamono_tsurugi_init.cpp), replacing the Uno R3
- *           op-amp buffer on pin 13. PC3 is in the VUSB domain, so the LED lights
- *           only while the USB voltage regulator is on (i.e. USB-powered).
+ *           (DU USART1 is only PD6/PD7, which are SPI SCK / AREF here). Inert.
+ *   LED   -> on-board LED follows D13 (PD6, SPI SCK) through a unity-gain op-amp
+ *           buffer on the board - the same arrangement as the Arduino Uno R3 - so
+ *           the LED never loads the SCK line. No firmware is involved.
+ *   AREF  -> PD7 (VREFA) is wired to the AREF header pin for an external analog
+ *           reference; it has no digital pin number.
  *   Serial-> native USB CDC (USBSerial), Leonardo/Micro convention.
  *
  *   NOTE on names: the Uno R3 D0/D1 UART is wired to USART0 on this board, so the
@@ -90,20 +92,20 @@
 #define PIN_PF4 (4)   // D4  general I/O (no PWM: TCB0 = millis)
 #define PIN_PD1 (5)   // D5  TCA0 WO1
 #define PIN_PD0 (6)   // D6  TCA0 WO0
-#define PIN_PD7 (7)   // D7  general I/O (was AREF; VREFA disabled)
-#define PIN_PA7 (8)   // D8  general I/O (native 5V; ex-PC3 slot)
+#define PIN_PC3 (7)   // D7  general I/O (VDD-driven output, confirmed by measurement)
+#define PIN_PA7 (8)   // D8  general I/O
 #define PIN_PD2 (9)   // D9  TCA0 WO2
 #define PIN_PD3 (10)  // D10 TCA0 WO3 / SS (Uno convention, SSD=1)
 #define PIN_PD4 (11)  // D11 TCA0 WO4 / SPI MOSI
 #define PIN_PD5 (12)  // D12 TCA0 WO5 / SPI MISO
-#define PIN_PD6 (13)  // D13 SPI SCK / LED_BUILTIN (mirrored to PC3 via CCL)
+#define PIN_PD6 (13)  // D13 SPI SCK / LED_BUILTIN (op-amp buffered on the board)
 #define PIN_PF0 (14)  // D14 A0
 #define PIN_PF1 (15)  // D15 A1
 #define PIN_PF2 (16)  // D16 A2
 #define PIN_PF3 (17)  // D17 A3
 #define PIN_PA2 (18)  // D18 A4 / SDA
 #define PIN_PA3 (19)  // D19 A5 / SCL
-#define PIN_PC3 (20)  // BUILTIN_LED driver (CCL LUT1 mirror of PD6); VUSB domain; no Dn alias
+#define PIN_PD7 (20)  // AREF (VREFA, external analog reference); no Dn alias
 #define PIN_PA0 (21)  // XTALHF1 (crystal)
 #define PIN_PA1 (22)  // XTALHF2 (crystal)
 #define PIN_PF6 (23)  // RESET
@@ -118,6 +120,19 @@
 #if !defined(LED_BUILTIN)
   #define LED_BUILTIN                  (PIN_PD6)   // D13, on-board LED (Uno convention)
 #endif
+
+/* ---- Event output pins: FIXED by the board's pin-configuration table ----
+ * One pin per event output, no alternatives. Libraries (CustomLogic, and the
+ * Event library in its Wazamono form) route event outputs to these pins only.
+ *   EVOUTA -> PA7 = D8   (PORTMUX ALT1; PA2/D18 stays I2C SDA)
+ *   EVOUTF -> PF2 = A2   (PORTMUX default)
+ *   EVOUTD -> none: the hardware offers only PD2 or PD7, and on this board
+ *             PD2 (D9) is not assigned to EVSYS in the pin table while PD7
+ *             is the AREF pin. */
+#define WAZAMONO_EVOUTA_PIN            (PIN_PA7)
+#define WAZAMONO_EVOUTA_ALT            (1)
+#define WAZAMONO_EVOUTF_PIN            (PIN_PF2)
+#define WAZAMONO_EVOUTF_ALT            (0)
 
 #ifdef CORE_ATTACH_OLD
   #define EXTERNAL_NUM_INTERRUPTS      (48)
@@ -253,7 +268,7 @@
 #define PIN_A10  (PIN_PF4)   // D4
 #define PIN_A11  (PIN_PD1)   // D5
 #define PIN_A12  (PIN_PD0)   // D6
-#define PIN_A13  (PIN_PD7)   // D7
+#define PIN_A13  (PIN_PC3)   // D7
 #define PIN_A14  (PIN_PA7)   // D8
 #define PIN_A15  (PIN_PD2)   // D9
 #define PIN_A16  (PIN_PD3)   // D10
@@ -291,7 +306,7 @@ static const uint8_t D3  = PIN_PF5;  // ~PWM(TCB1)
 static const uint8_t D4  = PIN_PF4;
 static const uint8_t D5  = PIN_PD1;
 static const uint8_t D6  = PIN_PD0;
-static const uint8_t D7  = PIN_PD7;  // ex-AREF
+static const uint8_t D7  = PIN_PC3;
 static const uint8_t D8  = PIN_PA7;  // native 5V
 static const uint8_t D9  = PIN_PD2;
 static const uint8_t D10 = PIN_PD3;  // SS (Uno convention)
@@ -358,7 +373,7 @@ static const uint8_t A19  = PIN_A19;
     PF,         //  4 PF4  D4
     PD,         //  5 PD1  D5  TCA0 WO1
     PD,         //  6 PD0  D6  TCA0 WO0
-    PD,         //  7 PD7  D7  (ex-AREF)
+    PC,         //  7 PC3  D7
     PA,         //  8 PA7  D8  (native 5V)
     PD,         //  9 PD2  D9  TCA0 WO2
     PD,         // 10 PD3  D10 TCA0 WO3 / SS
@@ -371,7 +386,7 @@ static const uint8_t A19  = PIN_A19;
     PF,         // 17 PF3  A3
     PA,         // 18 PA2  A4 / SDA
     PA,         // 19 PA3  A5 / SCL
-    PC,         // 20 PC3  BUILTIN_LED driver (CCL LUT1)
+    PD,         // 20 PD7  AREF (VREFA)
     PA,         // 21 PA0  XTALHF1
     PA,         // 22 PA1  XTALHF2
     PF,         // 23 PF6  RESET
@@ -386,7 +401,7 @@ static const uint8_t A19  = PIN_A19;
     PIN4_bp,   //  4 PF4  D4
     PIN1_bp,   //  5 PD1  D5
     PIN0_bp,   //  6 PD0  D6
-    PIN7_bp,   //  7 PD7  D7
+    PIN3_bp,   //  7 PC3  D7
     PIN7_bp,   //  8 PA7  D8
     PIN2_bp,   //  9 PD2  D9
     PIN3_bp,   // 10 PD3  D10
@@ -399,7 +414,7 @@ static const uint8_t A19  = PIN_A19;
     PIN3_bp,   // 17 PF3  A3
     PIN2_bp,   // 18 PA2  A4
     PIN3_bp,   // 19 PA3  A5
-    PIN3_bp,   // 20 PC3  LED
+    PIN7_bp,   // 20 PD7  AREF
     #if ((CLOCK_SOURCE & 0x03) == 0) // internal clock -> PA0 is a usable GPIO
       PIN0_bp, // 21 PA0
     #else                            // external crystal/clock -> PA0 = XTALHF1
@@ -422,7 +437,7 @@ static const uint8_t A19  = PIN_A19;
     PIN4_bm,   //  4 PF4  D4
     PIN1_bm,   //  5 PD1  D5
     PIN0_bm,   //  6 PD0  D6
-    PIN7_bm,   //  7 PD7  D7
+    PIN3_bm,   //  7 PC3  D7
     PIN7_bm,   //  8 PA7  D8
     PIN2_bm,   //  9 PD2  D9
     PIN3_bm,   // 10 PD3  D10
@@ -435,7 +450,7 @@ static const uint8_t A19  = PIN_A19;
     PIN3_bm,   // 17 PF3  A3
     PIN2_bm,   // 18 PA2  A4
     PIN3_bm,   // 19 PA3  A5
-    PIN3_bm,   // 20 PC3  LED
+    PIN7_bm,   // 20 PD7  AREF
     #if ((CLOCK_SOURCE & 0x03) == 0)
       PIN0_bm, // 21 PA0
     #else
@@ -460,7 +475,7 @@ static const uint8_t A19  = PIN_A19;
     NOT_ON_TIMER, //  4 PF4  D4  (no PWM: TCB0 = millis)
     NOT_ON_TIMER, //  5 PD1  D5  (TCA0 WO1, dynamic)
     NOT_ON_TIMER, //  6 PD0  D6  (TCA0 WO0, dynamic)
-    NOT_ON_TIMER, //  7 PD7  D7
+    NOT_ON_TIMER, //  7 PC3  D7
     NOT_ON_TIMER, //  8 PA7  D8
     NOT_ON_TIMER, //  9 PD2  D9  (TCA0 WO2, dynamic)
     NOT_ON_TIMER, // 10 PD3  D10 (TCA0 WO3, dynamic)
@@ -473,7 +488,7 @@ static const uint8_t A19  = PIN_A19;
     NOT_ON_TIMER, // 17 PF3  A3
     NOT_ON_TIMER, // 18 PA2  A4
     NOT_ON_TIMER, // 19 PA3  A5
-    NOT_ON_TIMER, // 20 PC3  LED
+    NOT_ON_TIMER, // 20 PD7  AREF
     NOT_ON_TIMER, // 21 PA0
     NOT_ON_TIMER, // 22 PA1
     NOT_ON_TIMER, // 23 PF6 RESET
