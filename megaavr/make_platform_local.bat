@@ -28,9 +28,10 @@ REM
 REM  ENCODING: arduino-cli reads platform.local.txt as UTF-8, while cmd
 REM  redirection writes in the console codepage (CP932 on Japanese
 REM  Windows). A path containing e.g. "Documents" in Japanese would be
-REM  written as Shift-JIS and come out garbled. Two defences below:
-REM  paths are converted to their ASCII-only 8.3 short form, and the
-REM  file is written under codepage 65001 (UTF-8).
+REM  written as Shift-JIS and come out garbled. Fix: the file is written
+REM  under codepage 65001 (UTF-8), so the real (long) path goes in
+REM  correctly. (8.3 short names are NOT a fix: on Japanese systems the
+REM  short form of a Japanese folder still contains Japanese characters.)
 REM ============================================================
 
 REM     megaavr -> WazamonoCore -> hardware -> Arduino -> tools
@@ -50,13 +51,11 @@ if not defined GCCDIR (
 )
 if not defined GCCDIR goto :nogcc
 if not exist "%GCCDIR%\bin\avr-gcc.exe" goto :nogcc
-REM 8.3 short path: pure ASCII even when the profile path is Japanese
-for %%d in ("%GCCDIR%") do set "GCCDIR=%%~sd"
 set "GCCFWD=%GCCDIR:\=/%"
 
 REM --- avrdude (optional; needed to UPLOAD over the USB-CDC bootloader) ---
 set "DUDEDIR="
-for /d %%d in ("%TOOLS%\avrdude\*") do set "DUDEDIR=%%~sd"
+for /d %%d in ("%TOOLS%\avrdude\*") do set "DUDEDIR=%%~fd"
 
 REM write the file as UTF-8 (restore the console codepage afterwards)
 for /f "tokens=2 delims=:" %%c in ('chcp') do set "OLDCP=%%c"
