@@ -24,6 +24,13 @@ REM
 REM  NOTE: do NOT add -mrodata-in-ram here. That flag is per-board
 REM  (build.rodata_flags in boards.txt): valid for avrxmega2/4 parts
 REM  (avr64du32) but rejected by GCC for avrxmega3 parts (avr32du20).
+REM
+REM  ENCODING: arduino-cli reads platform.local.txt as UTF-8, while cmd
+REM  redirection writes in the console codepage (CP932 on Japanese
+REM  Windows). A path containing e.g. "Documents" in Japanese would be
+REM  written as Shift-JIS and come out garbled. Two defences below:
+REM  paths are converted to their ASCII-only 8.3 short form, and the
+REM  file is written under codepage 65001 (UTF-8).
 REM ============================================================
 
 REM     megaavr -> WazamonoCore -> hardware -> Arduino -> tools
@@ -43,11 +50,17 @@ if not defined GCCDIR (
 )
 if not defined GCCDIR goto :nogcc
 if not exist "%GCCDIR%\bin\avr-gcc.exe" goto :nogcc
+REM 8.3 short path: pure ASCII even when the profile path is Japanese
+for %%d in ("%GCCDIR%") do set "GCCDIR=%%~sd"
 set "GCCFWD=%GCCDIR:\=/%"
 
 REM --- avrdude (optional; needed to UPLOAD over the USB-CDC bootloader) ---
 set "DUDEDIR="
-for /d %%d in ("%TOOLS%\avrdude\*") do set "DUDEDIR=%%~fd"
+for /d %%d in ("%TOOLS%\avrdude\*") do set "DUDEDIR=%%~sd"
+
+REM write the file as UTF-8 (restore the console codepage afterwards)
+for /f "tokens=2 delims=:" %%c in ('chcp') do set "OLDCP=%%c"
+chcp 65001 >nul
 
 > platform.local.txt echo # WazamonoCore platform.local.txt  (machine-local - listed in .gitignore)
 >> platform.local.txt echo # Points the build at the local avr-gcc 15.x toolchain (AVR DU support,
@@ -59,6 +72,7 @@ set "DUDEFWD=%DUDEDIR:\=/%"
 >> platform.local.txt echo # avrdude with avr64du32 support (sketch upload + burn bootloader)
 >> platform.local.txt echo tools.avrdude.path=%DUDEFWD%/
 :nodude
+chcp %OLDCP% >nul
 
 echo.
 echo Using avr-gcc: %GCCDIR%\bin\avr-gcc.exe
