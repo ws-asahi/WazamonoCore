@@ -4,9 +4,6 @@
  * another pin, carried entirely inside the chip. No wire between them, no
  * code in loop() - and it keeps working while the CPU sleeps.
  *
-<<<<<<< HEAD
- * The OUTPUT pin must be one of the board's fixed event-output pins:
-=======
  * Which pins can be used?
  *
  * OUT - only the board's fixed event-output pins (one per event output):
@@ -30,7 +27,6 @@
  * pin) makes that connect() return false.
  *
  * This sketch:
->>>>>>> Replace the Event library with EventSystem, built for these three boards
  *              from (button)   to (LED + resistor, to GND)
  *   Tachi      D8              D2
  *   Tsurugi    D10             D8
