@@ -10,6 +10,8 @@ REM  IDE does NOT resolve toolchain dependencies. platform.txt's
 REM  {runtime.tools.avr-gcc.path} then falls back to the stock Arduino
 REM  avr-gcc 7.3.0, which has no AVR DU support -> the build fails with
 REM    "device-specs/specs-avr64du32: No such file or directory".
+REM  (Board Manager installs resolve {runtime.tools.*} from the package
+REM  index toolsDependencies, so end users never need this script.)
 REM
 REM  This script locates the avr-gcc 15.x toolchain and avrdude, and writes
 REM  a platform.local.txt pointing at them. Search order for avr-gcc:
@@ -18,18 +20,23 @@ REM      Arduino\tools\avr-gcc\*-wazamono*    (Wazamono build - PREFERRED)
 REM      C:\avr-gcc\avr-gcc-*                 (stock upstream build)
 REM      Arduino\tools\avr-gcc\avr-gcc-*      (stock build; ASCII-only profiles)
 REM
-REM  WHY the distinction: a STOCK Windows GCC cannot run from a directory
-REM  whose path contains non-ASCII characters. Compiling appears to work
-REM  (arduino-cli hands the paths over itself), but at LINK time the gcc
-REM  driver (which upstream ships with a UTF-8 activeCodePage manifest)
-REM  derives the crt*/libgcc/libc search paths from its own install
-REM  location and relays them to collect2/ld, which upstream ships WITHOUT
-REM  that manifest (= they run in CP932 on Japanese Windows) - the paths
-REM  arrive garbled and ld reports "cannot find crtavr64du32.o / -lgcc".
-REM  The WAZAMONO builds (<version>-wazamonoN) embed the UTF-8 manifest in
-REM  EVERY executable, so the whole chain shares one encoding and works
-REM  from ANY path, Japanese profile folders included. Stock builds must
-REM  stay on an ASCII path such as C:\avr-gcc.
+REM  WHY the distinction: the WAZAMONO builds (<version>-wazamonoN) work
+REM  from ANY install path expressible in the system codepage, Japanese
+REM  profile folders included, because of two deliberate choices:
+REM    1. GCC is configured with --disable-win32-utf8-manifest, so the
+REM       driver, cc1/cc1plus, collect2 AND binutils all run with the
+REM       same ANSI codepage (CP932 on Japanese Windows) - the same
+REM       uniform-encoding principle as the azduino 7.3 toolchain.
+REM    2. binutils is pinned >= 2.46.1. binutils 2.45 and earlier 2.4x
+REM       had a byte-index/wide-index confusion in bfdio.c's '/' -> '\'
+REM       conversion that corrupted any NON-ASCII path written with
+REM       FORWARD slashes (exactly what the gcc driver hands to ld for
+REM       crt*/-L paths) -> "cannot find crtavr64du32.o / -lgcc".
+REM       Fixed upstream in 2.46.1.
+REM  A STOCK upstream Windows GCC ships the driver WITH a UTF-8
+REM  activeCodePage manifest while ld runs ANSI (mixed encodings), and
+REM  its binutils version is not guaranteed >= 2.46.1 - keep stock
+REM  builds on an ASCII path such as C:\avr-gcc.
 REM  platform.local.txt is machine-local (absolute paths) and is listed
 REM  in .gitignore - it does NOT survive a re-clone; just run this again.
 REM
@@ -57,8 +64,9 @@ if defined AVRGCC_ROOT (
   if not defined GCCDIR if exist "%AVRGCC_ROOT%\bin\avr-gcc.exe" set "GCCDIR=%AVRGCC_ROOT%"
 )
 if not defined AVRGCC_ROOT set "AVRGCC_ROOT=C:\avr-gcc"
-REM 1) Wazamono build under the sketchbook tools folder (UTF-8 manifests
-REM    in every executable -> works from any path, Japanese included)
+REM 1) Wazamono build under the sketchbook tools folder (uniform ANSI
+REM    codepage + binutils >= 2.46.1 -> works from any path, Japanese
+REM    profile folders included)
 if not defined GCCDIR for /d %%d in ("%TOOLS%\avr-gcc\*-wazamono*") do set "GCCDIR=%%~fd"
 REM 2) stock upstream build on an ASCII path
 if not defined GCCDIR for /d %%d in ("%AVRGCC_ROOT%\avr-gcc-*") do set "GCCDIR=%%~fd"
@@ -70,6 +78,9 @@ if not exist "%GCCDIR%\bin\avr-gcc.exe" goto :nogcc
 set "GCCFWD=%GCCDIR:\=/%"
 
 REM --- avrdude (optional; needed to UPLOAD over the USB-CDC bootloader) ---
+REM Expects the normalized Wazamono layout: <dir>\bin\avrdude.exe and
+REM <dir>\etc\avrdude.conf (same layout the Board Manager package uses;
+REM platform.txt derives cmd.path/config.path from tools.avrdude.path).
 set "DUDEDIR="
 for /d %%d in ("%TOOLS%\avrdude\*") do set "DUDEDIR=%%~fd"
 if not defined DUDEDIR for /d %%d in ("%AVRGCC_ROOT%\avrdude*") do set "DUDEDIR=%%~fd"
@@ -80,7 +91,8 @@ chcp 65001 >nul
 
 > platform.local.txt echo # WazamonoCore platform.local.txt  (machine-local - listed in .gitignore)
 >> platform.local.txt echo # Points the build at the local avr-gcc 15.x toolchain (AVR DU support,
->> platform.local.txt echo # avr-libc 2.3.1 with merged WDT fixes) instead of the IDE default 7.3.0.
+>> platform.local.txt echo # vanilla avr-libc 2.3.2 - the merged WDT fixes are not yet in a release)
+>> platform.local.txt echo # instead of the IDE default 7.3.0.
 >> platform.local.txt echo compiler.path=%GCCFWD%/bin/
 if not defined DUDEDIR goto :nodude
 set "DUDEFWD=%DUDEDIR:\=/%"
@@ -92,7 +104,7 @@ chcp %OLDCP% >nul
 
 echo.
 echo Using avr-gcc: %GCCDIR%\bin\avr-gcc.exe
-echo %GCCDIR% | findstr /i "wazamono" >nul && echo   (Wazamono build: UTF-8 manifests in every executable - any install path OK)
+echo %GCCDIR% | findstr /i "wazamono" >nul && echo   (Wazamono build: uniform ANSI codepage + binutils^>=2.46.1 - any install path OK)
 "%GCCDIR%\bin\avr-gcc.exe" --version | findstr /r "avr-gcc"
 echo.
 echo Wrote platform.local.txt:
@@ -112,7 +124,7 @@ echo   "%AVRGCC_ROOT%\avr-gcc-*\bin\avr-gcc.exe"
 echo   "%TOOLS%\avr-gcc\avr-gcc-*\bin\avr-gcc.exe"
 echo Put a Wazamono build at  Arduino\tools\avr-gcc\15.2.0-wazamono1\  (works
 echo from any path), or a stock build at  C:\avr-gcc\avr-gcc-15.2.0\  (ASCII
-echo path only - a Japanese profile path breaks a stock GCC's link stage).
+echo path only - see the header for why).
 popd
 endlocal
 exit /b 1
