@@ -2,7 +2,7 @@
 setlocal
 pushd "%~dp0"
 REM ============================================================
-REM  build_wazamono.bat   (cmd-native, ASCII-only auto-detect)
+REM  build_wazamono.bat   (cmd-native, ASCII-only source)
 REM  WazamonoCore fork - build the USB CDC bootloader for the
 REM  Wazamono product boards.
 REM
@@ -21,31 +21,56 @@ REM                    Neither given => active-LOW; both given => LED_AH wins.
 REM    - USB identity: BOARD=TACHI | TSURUGI  (selects PID + product string)
 REM
 REM  Tachi's LED (PD5) is active-LOW (Pro Micro RX/TX convention); Tsurugi's
-REM  LED (PD6 = D13, op-amp buffered) is active-HIGH (Arduino Uno convention).  Each board
-REM  passes its polarity explicitly below.
+REM  LED (PD6 = D13, op-amp buffered) is active-HIGH (Arduino Uno convention).
+REM  Each board passes its polarity explicitly below.
 REM
 REM  The signature is read from SIGROW at runtime (stk500.c), so the single
 REM  avr64du32 hex serves every Wazamono board that shares the 64 KB flash.
 REM
+REM  --- Toolchain search order (first hit wins) -----------------------
+REM    0) %AVRGCC_ROOT%                     explicit override
+REM    1) Board Manager install (canonical since the package release):
+REM       %LOCALAPPDATA%\Arduino15\packages\WazamonoCore\tools\avr-gcc\*
+REM    2) Sketchbook tools folder, resolved RELATIVE to this script so the
+REM       ASCII-only source still finds a Japanese profile path:
+REM       ..\..\..\..\..\tools\avr-gcc\*-wazamono*
+REM       (usbcdcboot -> bootloaders -> megaavr -> WazamonoCore -> hardware
+REM        -> Arduino\tools)
+REM    3) Legacy stock build at C:\avr-gcc\avr-gcc-*
+REM  Wazamono builds (*-wazamonoN) run from any path (uniform ANSI codepage
+REM  + binutils >= 2.46.1); a stock build should stay on an ASCII path.
+REM
 REM  Put this in  WazamonoCore\megaavr\bootloaders\usbcdcboot\  and run.
 REM ============================================================
 
-REM --- find avr-gcc under C:\avr-gcc (version auto-detected) ------------
-REM  The avr-gcc 15.2 toolchain lives at  C:\avr-gcc\avr-gcc-15.2.0\ .
-REM  Override the root with:  set "AVRGCC_ROOT=D:\path"  before running.
 if not defined AVRGCC_ROOT set "AVRGCC_ROOT=C:\avr-gcc"
 set "GCCBIN="
-for /d %%d in ("%AVRGCC_ROOT%\avr-gcc-*") do set "GCCBIN=%%~fd\bin"
-if not defined GCCBIN if exist "%AVRGCC_ROOT%\bin\avr-gcc.exe" set "GCCBIN=%AVRGCC_ROOT%\bin"
+
+REM 0) explicit override: accept <root>\bin, <root>\avr-gcc-*, <root>\*-wazamono*
+if defined AVRGCC_ROOT (
+  for /d %%d in ("%AVRGCC_ROOT%\*-wazamono*") do set "GCCBIN=%%~fd\bin"
+  if not defined GCCBIN for /d %%d in ("%AVRGCC_ROOT%\avr-gcc-*") do set "GCCBIN=%%~fd\bin"
+  if not defined GCCBIN if exist "%AVRGCC_ROOT%\bin\avr-gcc.exe" set "GCCBIN=%AVRGCC_ROOT%\bin"
+)
+REM 1) Board Manager install
+if not defined GCCBIN for /d %%d in ("%LOCALAPPDATA%\Arduino15\packages\WazamonoCore\tools\avr-gcc\*") do set "GCCBIN=%%~fd\bin"
+REM 2) sketchbook tools, relative to this script
+if not defined GCCBIN for /d %%d in ("%~dp0..\..\..\..\..\tools\avr-gcc\*-wazamono*") do set "GCCBIN=%%~fd\bin"
+
 if not defined GCCBIN (
-  echo ERROR: no avr-gcc-*\bin found under "%AVRGCC_ROOT%"
-  echo   Put the toolchain at  C:\avr-gcc\avr-gcc-15.2.0\   ^(or set AVRGCC_ROOT^).
+  echo ERROR: no avr-gcc toolchain found. Looked in:
+  echo   "%AVRGCC_ROOT%"  ^(override root^)
+  echo   "%LOCALAPPDATA%\Arduino15\packages\WazamonoCore\tools\avr-gcc\*\bin"
+  echo   "%~dp0..\..\..\..\..\tools\avr-gcc\*-wazamono*\bin"
+  echo   "C:\avr-gcc\avr-gcc-*\bin"
+  echo Install WazamonoCore via the Board Manager, or set AVRGCC_ROOT.
   popd ^& exit /b 1
 )
 if not exist "%GCCBIN%\avr-gcc.exe" (
   echo ERROR: avr-gcc.exe missing in "%GCCBIN%"
   popd ^& exit /b 1
 )
+echo Using avr-gcc: %GCCBIN%\avr-gcc.exe
 set "PATH=%GCCBIN%;%PATH%"
 if not defined MAKE set MAKE=make
 

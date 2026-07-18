@@ -18,17 +18,29 @@
 #                    Neither given => active-LOW; both given => LED_AH wins.
 #    - USB identity: BOARD=TACHI | TSURUGI  (selects PID + product string)
 #
-#  Toolchain: by default this uses the Windows avr-gcc you copied to
-#  C:\avr-gcc (the same one the IDE uses), auto-translated to this shell's
-#  view -- /c/avr-gcc under Git Bash/MSYS, /mnt/c/avr-gcc under WSL -- and
-#  prepended to PATH.  make then runs avr-gcc(.exe) from PATH.
+#  --- Toolchain search order (first usable hit wins) -----------------
+#    0) $GCC_BIN                          explicit override (set empty to
+#                                         keep whatever is on PATH)
+#    1) native Linux builds (WSL/Linux):
+#         ~/wazamono-toolchain/build/prefix-native/bin
+#         ~/avr-gcc/bin  or  ~/avr-gcc*/bin
+#       (re-create with:  cd ~/wazamono-toolchain &&
+#        bash scripts/build-avr-gcc.sh native
+#        ...or extract avr-gcc-*-x86_64-pc-linux-gnu.tar.gz from the
+#        wazamono-toolchain GitHub Release into ~/avr-gcc)
+#    2) sketchbook tools, RELATIVE to this script (works from Git Bash
+#       and WSL alike since the script lives on the Windows tree):
+#         ../../../../../tools/avr-gcc/*-wazamono*/bin
+#    3) Board Manager install:
+#         <Users>/<name>/AppData/Local/Arduino15/packages/WazamonoCore/
+#           tools/avr-gcc/*/bin   (via /c or /mnt/c)
+#    4) legacy stock build:  /c/avr-gcc, /mnt/c/avr-gcc
 #
-#  Override the toolchain, e.g. a native Linux build under WSL:
-#    GCC_BIN=$HOME/avr-gcc-build/build/avr-gcc-15.2.0-x64-linux/bin ./build_wazamono.sh
-#  or skip auto-detect and use whatever avr-gcc is already on your PATH:
-#    GCC_BIN= ./build_wazamono.sh
-#  (Under WSL prefer the Linux toolchain above; running the Windows .exe via
-#   /mnt/c works only for source trees on a path the .exe can resolve.)
+#  NOTE (WSL): a directory qualifies only if it contains an executable
+#  named exactly `avr-gcc` for this shell. Windows toolchains (avr-gcc.exe)
+#  qualify under Git Bash/MSYS, which resolves the .exe suffix, but NOT
+#  under WSL, where make cannot spawn `avr-gcc` from an .exe-only dir.
+#  Under WSL use a native Linux toolchain (option 1).
 #
 #  Usage (from this directory):
 #    ./build_wazamono.sh
@@ -36,22 +48,52 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-# --- Toolchain: default to C:\avr-gcc, translated for this shell ----------
-# Set GCC_BIN explicitly to override; set it to empty to keep your own PATH.
+# does $1/avr-gcc work for THIS shell?
+usable_bin() {
+  [ -d "$1" ] || return 1
+  if [ -x "$1/avr-gcc" ]; then return 0; fi
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) [ -f "$1/avr-gcc.exe" ] && return 0 ;;
+  esac
+  return 1
+}
+
 if [ "${GCC_BIN+set}" != "set" ]; then
   GCC_BIN=""
-  for root in /c/avr-gcc /mnt/c/avr-gcc; do
-    [ -d "$root" ] || continue
-    cand="$(ls -d "$root"/avr-gcc-*/bin 2>/dev/null | sort | tail -n1)"
-    if [ -z "$cand" ] && [ -d "$root/bin" ]; then cand="$root/bin"; fi
-    if [ -n "$cand" ]; then GCC_BIN="$cand"; break; fi
+  candidates=()
+  # 1) native builds
+  candidates+=("$HOME/wazamono-toolchain/build/prefix-native/bin")
+  for d in "$HOME"/avr-gcc*/bin "$HOME/avr-gcc/bin"; do candidates+=("$d"); done
+  # 2) sketchbook tools relative to this script
+  for d in ../../../../../tools/avr-gcc/*-wazamono*/bin; do candidates+=("$d"); done
+  # 3) Board Manager install (Git Bash: /c, WSL: /mnt/c)
+  for root in /c/Users /mnt/c/Users; do
+    for d in "$root"/*/AppData/Local/Arduino15/packages/WazamonoCore/tools/avr-gcc/*/bin; do
+      candidates+=("$d")
+    done
   done
+
+  for cand in "${candidates[@]}"; do
+    if usable_bin "$cand"; then
+      GCC_BIN="$(cd "$cand" && pwd)"
+      break
+    fi
+  done
+  if [ -z "$GCC_BIN" ]; then
+    echo "ERROR: no usable avr-gcc found for this shell." >&2
+    echo "  WSL/Linux: build or extract a native toolchain, e.g." >&2
+    echo "    cd ~/wazamono-toolchain && bash scripts/build-avr-gcc.sh native" >&2
+    echo "  Git Bash : install WazamonoCore via the Board Manager." >&2
+    echo "  Or set GCC_BIN=/path/to/toolchain/bin explicitly." >&2
+    exit 1
+  fi
 fi
 if [ -n "${GCC_BIN}" ]; then
   case ":$PATH:" in
     *":$GCC_BIN:"*) ;;
     *) PATH="$GCC_BIN:$PATH" ;;
   esac
+  echo "Using avr-gcc from: $GCC_BIN"
 fi
 
 MAKE="${MAKE:-make}"
