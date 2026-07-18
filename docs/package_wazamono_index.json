@@ -30,9 +30,6 @@
             },
             {
               "name": "Wazamono Kunai (AVR32DU20)"
-            },
-            {
-              "name": "AVR64DU32 Curiosity Nano"
             }
           ],
           "toolsDependencies": [
