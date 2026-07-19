@@ -19,8 +19,8 @@
  *   D2   PA6   (USART0 XCK, ALT1)                           A8,  AIN26
  *   D3   PF5   ~PWM(TCB1, ALT1)                             A9,  AIN21
  *   D4   PF4   (general I/O; no PWM - TCB0 is millis)       A10, AIN20
- *   D5   PD1   ~PWM(TCA0 WO1) | CCL                         A11, AIN1
- *   D6   PD0   ~PWM(TCA0 WO0) | CCL                         A12, AIN0
+ *   D5   PD0   ~PWM(TCA0 WO0) | CCL                         A11, AIN0
+ *   D6   PD1   ~PWM(TCA0 WO1) | CCL                         A12, AIN1
  *   D7   PC3   (general I/O; VDD-driven, confirmed by test) A13, AIN31
  *   D8   PA7   (general I/O)                                A14, AIN27
  *   D9   PD2   ~PWM(TCA0 WO2) | CCL | AC0 AINP0 | EVOUTD    A15, AIN2
@@ -90,8 +90,8 @@
 #define PIN_PA6 (2)   // D2  (USART0 XCK)
 #define PIN_PF5 (3)   // D3  ~PWM(TCB1, ALT1)
 #define PIN_PF4 (4)   // D4  general I/O (no PWM: TCB0 = millis)
-#define PIN_PD1 (5)   // D5  TCA0 WO1
-#define PIN_PD0 (6)   // D6  TCA0 WO0
+#define PIN_PD0 (5)   // D5  TCA0 WO0
+#define PIN_PD1 (6)   // D6  TCA0 WO1
 #define PIN_PC3 (7)   // D7  general I/O (VDD-driven output, confirmed by measurement)
 #define PIN_PA7 (8)   // D8  general I/O
 #define PIN_PD2 (9)   // D9  TCA0 WO2
@@ -267,8 +267,8 @@
 #define PIN_A8   (PIN_PA6)   // D2
 #define PIN_A9   (PIN_PF5)   // D3
 #define PIN_A10  (PIN_PF4)   // D4
-#define PIN_A11  (PIN_PD1)   // D5
-#define PIN_A12  (PIN_PD0)   // D6
+#define PIN_A11  (PIN_PD0)   // D5
+#define PIN_A12  (PIN_PD1)   // D6
 #define PIN_A13  (PIN_PC3)   // D7
 #define PIN_A14  (PIN_PA7)   // D8
 #define PIN_A15  (PIN_PD2)   // D9
@@ -305,10 +305,10 @@ static const uint8_t D1  = PIN_PA4;  // TX
 static const uint8_t D2  = PIN_PA6;
 static const uint8_t D3  = PIN_PF5;  // ~PWM(TCB1)
 static const uint8_t D4  = PIN_PF4;
-static const uint8_t D5  = PIN_PD1;
-static const uint8_t D6  = PIN_PD0;
+static const uint8_t D5  = PIN_PD0;
+static const uint8_t D6  = PIN_PD1;
 static const uint8_t D7  = PIN_PC3;
-static const uint8_t D8  = PIN_PA7;  // native 5V
+static const uint8_t D8  = PIN_PA7;  
 static const uint8_t D9  = PIN_PD2;
 static const uint8_t D10 = PIN_PD3;  // SS (Uno convention)
 static const uint8_t D11 = PIN_PD4;  // MOSI
@@ -372,8 +372,8 @@ static const uint8_t A19  = PIN_A19;
     PA,         //  2 PA6  D2  USART0 XCK
     PF,         //  3 PF5  D3  TCB1 PWM (ALT1)
     PF,         //  4 PF4  D4
-    PD,         //  5 PD1  D5  TCA0 WO1
-    PD,         //  6 PD0  D6  TCA0 WO0
+    PD,         //  5 PD0  D5  TCA0 WO0
+    PD,         //  6 PD1  D6  TCA0 WO1
     PC,         //  7 PC3  D7
     PA,         //  8 PA7  D8  (native 5V)
     PD,         //  9 PD2  D9  TCA0 WO2
@@ -400,8 +400,8 @@ static const uint8_t A19  = PIN_A19;
     PIN6_bp,   //  2 PA6  D2
     PIN5_bp,   //  3 PF5  D3
     PIN4_bp,   //  4 PF4  D4
-    PIN1_bp,   //  5 PD1  D5
-    PIN0_bp,   //  6 PD0  D6
+    PIN0_bp,   //  5 PD0  D5
+    PIN1_bp,   //  6 PD1  D6
     PIN3_bp,   //  7 PC3  D7
     PIN7_bp,   //  8 PA7  D8
     PIN2_bp,   //  9 PD2  D9
@@ -436,8 +436,8 @@ static const uint8_t A19  = PIN_A19;
     PIN6_bm,   //  2 PA6  D2
     PIN5_bm,   //  3 PF5  D3
     PIN4_bm,   //  4 PF4  D4
-    PIN1_bm,   //  5 PD1  D5
-    PIN0_bm,   //  6 PD0  D6
+    PIN0_bm,   //  5 PD0  D5
+    PIN1_bm,   //  6 PD1  D6
     PIN3_bm,   //  7 PC3  D7
     PIN7_bm,   //  8 PA7  D8
     PIN2_bm,   //  9 PD2  D9
@@ -474,8 +474,8 @@ static const uint8_t A19  = PIN_A19;
     NOT_ON_TIMER, //  2 PA6  D2
     TIMERB1,      //  3 PF5  D3  (TCB1 - D3 PWM, ALT1)
     NOT_ON_TIMER, //  4 PF4  D4  (no PWM: TCB0 = millis)
-    NOT_ON_TIMER, //  5 PD1  D5  (TCA0 WO1, dynamic)
-    NOT_ON_TIMER, //  6 PD0  D6  (TCA0 WO0, dynamic)
+    NOT_ON_TIMER, //  5 PD0  D5  (TCA0 WO0, dynamic)
+    NOT_ON_TIMER, //  6 PD1  D6  (TCA0 WO1, dynamic)
     NOT_ON_TIMER, //  7 PC3  D7
     NOT_ON_TIMER, //  8 PA7  D8
     NOT_ON_TIMER, //  9 PD2  D9  (TCA0 WO2, dynamic)
