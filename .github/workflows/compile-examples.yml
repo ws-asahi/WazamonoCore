@@ -71,7 +71,7 @@ jobs:
           platforms: |
             # Pull the WazamonoCore toolchain + released platform (also
             # provides builtin tools such as ctags).
-            - source-url: https://wazamono.ws-asahi.net/ws-asahi/WazamonoCore/main/docs/package_wazamono_index.json
+            - source-url: https://wazamono.ws-asahi.net/package_wazamono_index.json
               name: WazamonoCore:megaavr
             # Overlay the working tree so this commit's code is what gets built.
             - source-path: megaavr
