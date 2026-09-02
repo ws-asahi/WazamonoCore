@@ -152,13 +152,14 @@ ATmega と比べて EEPROM は小さくなりましたが（256 B）、代わり
 ## ベンチマークテスト
 
 他互換機種とのベンチマークテストの結果です。  
+各テスト結果は5回の平均値です。  
 
-| 機種 | MCU | Clock(MHz) | Dhrystone 2.1(5回平均) | CoreMark 1.0 Iterations/Sec(5回平均) | Whetstone 1.2(5回平均) |
-|------|-----|------------|------------------------|-------------------------------------|-----------------------|
-| Tsurugi | AVR64DU32 | 24 | 28,931.850 | 14.18 | 7952 ms |
-| Arduino Uno R3 | ATmega328P | 16 | 17307.590 | -(動作せず)  | 12480 ms |
-| Arduino Leonardo | ATmega32U4 | 16 | 17207.268 | -(書き込めず) | 12564 ms |
-| Arduino Uno R4 | RA4M1 | 48 | 62303.986 | 81.78 | 7779 ms |
+| 機種 | MCU | Clock(MHz) | CoreMark 1.0 Iter./Sec | EmbeddedLinpack MFLOPS | Original Shieve Iter./Sec |
+|------|-----|------------|------------------------|------------------------|---------------------------|
+| Tsurugi | AVR64DU32 | 24 | 14.18 | 0.13 | 18.91 |
+| Arduino Uno R3 | ATmega328P | 16 | (動作せず) | 0.08 | 11.66 |
+| Arduino Leonardo | ATmega32U4 | 16 | (書き込めず) | 0.08 | 11.59 |
+| Arduino Uno R4 | RA4M1 | 48 | 81.78 | 2.87 | 140.01 |
 
 ---
 
