@@ -153,12 +153,13 @@ EEPROM is smaller than on the ATmega (256 B), but new areas such as **USERROW (u
 
 Benchmark results against other compatible boards.  
 
-| Board | MCU | Clock (MHz) | Dhrystone 2.1 (avg. of 5) | CoreMark 1.0 Iterations/Sec (avg. of 5) |
-|-------|-----|-------------|---------------------------|-----------------------------------------|
-| Tsurugi | AVR64DU32 | 24.0 | (not tested)  | (not tested) |
-| Arduino Uno R3 | ATmega328P | 16.0 | 17307.590 | - (could not be uploaded) |
-| Arduino Leonardo | ATmega32U4 | 16.0 | 17207.268 | - (did not run) |
-| Arduino Uno R4 | RA4M1 | 48.0 | 62303.986 | 81.78 |
+| Board | MCU | Clock (MHz) | Dhrystone 2.1(avg. of 5) | CoreMark 1.0 Iterations/Sec(avg. of 5) | Whetstone 1.2(avg. of 5) |
+|-------|-----|-------------|--------------------------|----------------------------------------|--------------------------|
+| Tsurugi | AVR64DU32 | 24 | 28,931.850 | 14.18 | 7952 ms |
+| Arduino Uno R3 | ATmega328P | 16 | 17307.590 | -(did not run)  | 12480 ms |
+| Arduino Leonardo | ATmega32U4 | 16 | 17207.268 | -(did not write) | 12564 ms |
+| Arduino Uno R4 | RA4M1 | 48 | 62303.986 | 81.78 | 7779 ms |
+
 
 ---
 

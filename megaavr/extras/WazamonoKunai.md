@@ -117,11 +117,11 @@ This board is not suited to storing large amounts of data.
 
 Benchmark results against other compatible boards.  
 
-| Board | MCU | Clock (MHz) | Dhrystone 2.1 (avg. of 5) | CoreMark 1.0 Iterations/Sec (avg. of 5) |
-|-------|-----|-------------|---------------------------|-----------------------------------------|
-| Kunai (5.0 V) | AVR32DU20 | 24.0 | (not tested) | (not tested) |
-| Kunai (3.3 V) | AVR32DU20 | 24.0 | (not tested) | (not tested) |
-| Seeeduino XIAO | SAMD21G18 | 48.0 | 46547.108 | 51.73 |
+| Board | MCU | Clock (MHz) | Dhrystone 2.1 (avg. of 5) | CoreMark 1.0 Iterations/Sec (avg. of 5) | Whetstone 1.2 (avg. of 5) | 
+|-------|-----|-------------|---------------------------|-----------------------------------------|---------------------------|
+| Kunai (5.0 V) | AVR32DU20 | 24 | (not tested) | (not tested) | (not tested) |
+| Kunai (3.3 V) | AVR32DU20 | 24 | (not tested) | (not tested) | (not tested) |
+| Seeeduino XIAO | SAMD21G18 | 48 | 46547.108| 51.73 | 49126 ms |
 
 ---
 
