@@ -47,7 +47,7 @@ Tachi and Tsurugi carry the **AVR64DU32**; the compact Kunai carries the **AVR32
 | SRAM | 8 KB | 4 KB |
 | EEPROM | 256 B | 256 B |
 | USERROW | 512 B | 512 B |
-| Operating clock | 24 MHz | 24 MHz |
+| Operating clock | 24 MHz (12/16/20/24 MHz selectable) | 24 MHz (12/16/20/24 MHz selectable) |
 | USB | USB 2.0 Full-Speed | USB 2.0 Full-Speed |
 | ADC | 10-bit 170 ksps, 21 ch | 10-bit 170 ksps, 11 ch |
 | USART | 2 | 2 |

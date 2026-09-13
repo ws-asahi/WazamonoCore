@@ -47,7 +47,7 @@ Tachi と Tsurugi は **AVR64DU32**、小型の Kunai は **AVR32DU20** を搭�
 | SRAM | 8 KB | 4 KB |
 | EEPROM | 256 B | 256 B |
 | USERROW | 512 B | 512 B |
-| 動作クロック | 24 MHz | 24 MHz |
+| 動作クロック | 24 MHz (12/16/20/24 MHz 選択可) | 24 MHz (12/16/20/24 MHz 選択可) |
 | USB | USB 2.0 Full-Speed | USB 2.0 Full-Speed |
 | ADC | 10-bit 170ksps 21ch | 10-bit 170ksps 11ch |
 | USART | 2 | 2 |

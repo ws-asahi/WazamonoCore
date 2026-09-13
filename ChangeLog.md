@@ -4,20 +4,67 @@ The change history of WazamonoCore. WazamonoCore is the Arduino core for the Waz
 
 ---
 
-## Unreleased
+## v0.0.7 — Kunai bring-up, Tachi pin map rev.5, Ethernet shield support
+
+The first release in which all three boards (Tachi rev.5, Tsurugi rev.C, Kunai rev0.2) were brought up on real hardware from a blank MCU: SerialUPDI bootloader flash, USB-CDC enumeration, sketch upload and a common GPIO/ADC/PWM loop-back check. Two bugs that blocked the Kunai were found and fixed (USB enumeration on the AVR32DU20, and the manual-install `avrdude` selection), and every board now enumerates with its own USB identity. The W5100 Ethernet library is bundled with the SPI-clock fix the AVR DU needs, and the Clock menu grew to 24/20/16/12 MHz.
+
+### Fixes affecting all boards
+
+- **All three boards enumerated as the Tachi (`0x1209:0x0006`, "Wazamono Tachi")** (`usb_descriptors.{h,c}`): the core's USB descriptor file only includes `<avr/io.h>` and its own header, so the `USB_PID` / `USB_PRODUCT` defaults in each variant's `pins_arduino.h` never reached it and the Tachi fallback was used everywhere. The application PID and product string are now selected by the board macro (`ARDUINO_AVR_TSURUGI` / `ARDUINO_AVR_KUNAI`, derived from `boards.txt`), the same way the bootloader already did: Tachi `0x0006` / Tsurugi `0x0008` / Kunai `0x000A`. `-DUSB_PID` still overrides.
+- **Manual (sketchbook) installs used whatever `avrdude` the IDE had installed** for uploads and *Burn Bootloader* — typically `arduino:avrdude 8.0.0`, which is not the Wazamono build (`platform.txt`, `boards.txt`, `programmers.txt`, `make_platform_local.bat`): arduino-cli force-sets `tools.<name>.path` to `{runtime.tools.<name>.path}` for every tool name it knows, ignoring `platform.txt` and `platform.local.txt`, and it only scans `Arduino15/packages/*/tools` and `Arduino/hardware/*/tools` (not `Arduino/tools`). The upload tool is therefore renamed **`wzavrdude`**, which matches no installed tool and so honours the configured path. Board Manager installs are unaffected (the default is still `{runtime.tools.avrdude.path}`, resolved from `toolsDependencies`). `make_platform_local.bat` now writes `tools.wzavrdude.path`, and `Installation.md` documents the expected `Arduino/tools/avrdude/8.1-wazamonoN` layout.
+- **`abs()`, `bitToggle()` and `analogReference(EXTERNAL)` restored** — three ArduinoCore-avr API items that classic Uno / Pro Micro sketches use but this core lacked (`Common.h`, `core_devices.h`): `abs()` fell through to `int abs(int)` and silently truncated `float` / `double` / `long` arguments (`abs(-100000L)` returned 31072); it is now a function template (integer calls still bind to the C function, and `std::abs()` keeps working). `bitToggle()` was missing. `EXTERNAL` was guarded by a macro nothing defined; `EXTERNAL_VREF_AVAILABLE` is now set for the DU (which has a VREFA input) after `__AVR_DU__` exists.
+- **`analogReference(INTERNAL)` now builds and means 2.500 V on every board**: ArduinoCore-avr's `INTERNAL` meant 1.1 V on the Uno R3 and 2.56 V on the Pro Micro; the DU has neither. 2.500 V is within the reference's ±4 % of the Pro Micro value and needs only VDD ≥ 2.7 V. `INTERNAL1V1` / `INTERNAL2V56` stay undefined on purpose (the part cannot produce them); use `INTERNAL1V024` / `INTERNAL2V048` / `INTERNAL2V500` / `INTERNAL4V096` when the voltage matters.
+- **Servo: `detach()` left the TCB in periodic-interrupt mode**, so the `analogWrite()` pin driven by that timer (D3 on Tachi, where Servo takes TCB1) stayed dead for the rest of the run. `finISR()` now restores 8-bit PWM mode, mirroring `Tone.cpp`. Applied to both bundled Servo copies. Note that the DU has only TCB0/TCB1, so with millis on TCB0 a sketch cannot use Servo and `tone()` together (both claim TCB1's vector).
+- **UART synchronous / SPI-host modes**: the BAUD fraction bits are zeroed in `syncBegin()` / `mspiBegin()` as the datasheet requires.
+- Wire: `masterTransmit()` / `masterReceive()` declared their length parameter as `auto *`, a C++20 extension that produced four `-Wc++20-extensions` warnings for every sketch including `Wire.h`.
+- `wdt_compat.h` is included from `Arduino.h` again: the wazamono toolchain ships stock avr-libc 2.3.2, whose `wdt_enable()` / `wdt_disable()` do a read-modify-write inside the CCP window on the AVR DU (write silently dropped). The shim is correct on both stock and fixed avr-libc.
+
+### Bootloader
+
+- **Kunai (AVR32DU20) failed USB enumeration** — Windows reported "unknown USB device (invalid configuration descriptor)" while the device descriptor read fine (`usbcdcboot/src/usb_min.c`): the 67-byte configuration descriptor was the only IN transfer longer than one packet and was sent zero-copy by pointing `EP0.IN.DATAPTR` at the descriptor itself. The USB peripheral reads endpoint data buffers from internal SRAM only (DS40002548B / DS40002576B 28.3). On the avr64du32 the descriptor happened to live in SRAM (`-mrodata-in-ram`), so Tachi and Tsurugi worked; on the avrxmega3 avr32du20 `.rodata` is memory-mapped flash at 0x8000+, and the pointer (0x8EB1 in the shipped hex) returned garbage on the bus. EP0 IN data is now always staged through the SRAM scratch buffer (sized to the largest descriptor, +3 B .bss). All three `.hex` files rebuilt; `.text` 3636 / 3638 B, within the 4 KB budget.
+
+### Libraries
+
+- **Ethernet (W5100 / W5200 / W5500) bundled**, based on arduino-libraries/Ethernet 2.0.2 with 13 stock examples. On a 24 MHz AVR DU the stock `SPISettings(14000000)` rounds to **12 MHz** (the prescaler only offers /2, /4, /8 …), which a W5100 cannot follow — register reads come back shifted by one bit and `hardwareStatus()` reports no hardware. The Uno R3 never saw this because 16 MHz → 8 MHz. The bundled copy requests 8 MHz on `ARDUINO_ARCH_MEGAAVR` (6 / 8 / 5 / 6 MHz at 12 / 16 / 20 / 24 MHz) and uses atomic `OUTSET` / `OUTCLR` chip-select writes; the API is unchanged. On the Tsurugi a Uno R3 Ethernet shield plugs in directly (CS = D10, SD CS = D4). Verified on hardware with a W5100 shield.
+- **SPISlave supports the Tsurugi** (SS = PD7 = the AREF header pin, ALT4 position) via the new `PIN_SPI_SS_HARDWARE` variant macro (Tachi PD7/D18, Tsurugi PD7/D20, Kunai PA7/D1). While SPISlave is active, AREF is the SS input and is exclusive with `analogReference(EXTERNAL)`, GPIO/analog use of D20/A20, and Serial2.
+- Library READMEs, header comments and example sketches re-synchronised with the current pin maps of all three boards (several Tachi rev.2-era and pre-rev.3 Tsurugi numbers had survived). AnalogComp offers AINP4 (PC3) on every board.
+
+### Clock
+
+- **Clock menu: 24 (default) / 20 / 16 / 12 MHz internal on all three boards.** CLK_USB is generated from OSCHF's fixed 4 MHz tap through PLL48M and is independent of the main clock; CLK_PER only needs ≥ 12 MHz (DS40002548B 12.3.4.1.1 / 28.3.1.1), so USB-CDC works at every option. `usb_core.c` emits a `#warning` if F_CPU ever drops below 12 MHz. Hardware testing has been done mainly at 24 MHz.
+
+### Tachi
+
+- **Pin map rev.5** (crystal-less board): PC3 moves onto the header as **D4** (A6, TCB1 PWM via CCL LUT1); **A4 / A5 = PF4 / PF5 = D22 / D23** on test pads TP1 / TP2 (no header); **D17 (PF3) is now a dedicated user `LED_BUILTIN`** that the core never drives; **D30 = PA0 = TX activity LED, D31 = PA1 = RX activity LED** (all three LEDs active-LOW). PF6/PF7 are indices 32/33 (34 pins). TCB1 PWM adopts the exclusive three-outlet mux like the Tsurugi: D3 (TCB1 WO), D4 (LUT1) and D7 (LUT0), last `analogWrite()` wins, default D3.
+- Analog aliases run densely **A11..A20** (A11 = D0 … A20 = D17); the former A11 gap mirrored the Leonardo's A11 = D12, which does not exist on the Pro Micro form factor, so it bought nothing.
 
 ### Kunai
 
 - **Second TCB1 PWM outlet on D2**: Kunai now uses the same exclusive routing mechanism as Tachi and Tsurugi (`WAZAMONO_TCB1_PWMMUX`). `analogWrite()` delivers TCB1's 8-bit waveform to **D0** (PC3, CCL LUT1-OUT default position) or **D2** (PD6, CCL LUT2-OUT ALT1 position, DS40002548B 17.2.2); the pin most recently written takes the output (default D0), both share TCB1's frequency and duty, and `tone()` suspends both. D2 is also the Serial2 TX pin, so D2 PWM and Serial2 are alternatives. This matches the Kunai pin-configuration table, which had listed D2 as `TCB1+LUT2` while the core only implemented D0. The LUT2 ALT1 → PD6 route has not yet been measured on hardware; the LUT bytes are identical to the silicon-verified LUT0/LUT1 routes and only CCLROUTEA differs.
+- **Bring-up notes and rev0.2 erratum** (WazamonoKunai.md / .ja.md, "Uploading"): boards ship with JP1 (5 V / 3.3 V select) open on both sides — the MCU's VDD is unpowered until it is bridged, although the power LED (on the LDO output) lights; the **silkscreen of the two back pads is swapped** — the pad marked `VCC` is UPDI (PF7) and the pad marked `UPDI` is VCC; UPDI needs only GND + UPDI with the board powered over USB. Development PIDs corrected to the real values (application `0x000A`, bootloader `0x0009`).
 
 ### Core
 
 - **LUT-routed PWM edges are now synchronized** (`WAZAMONO_LUTPWM_FILTSEL`, default SYNCH): the CCL truth-table output is combinational, and DS40002548B §30.3.1.5 notes that it may produce short glitches when the input changes — i.e. on every PWM edge. On a scope this showed as a brief wobble on the rising edge of LUT-routed pins (Tachi D4/D7, Tsurugi D3/D4, Kunai D0/D2) that the direct TCB WO pin does not have. The LUT output is now re-clocked on CLK_PER (2-cycle delay, 83 ns at 24 MHz, applied to both edges, so the duty cycle is unchanged). `-DWAZAMONO_LUTPWM_FILTSEL=0` restores the zero-latency combinational path for comparison.
 - `WAZAMONO_TCB1_PWMMUX` no longer requires a direct WO outlet: `WAZAMONO_TCB1_PWM_WO_PIN` may be left undefined (Kunai has none — TCB1's WO positions are PA3/SCL and the absent PF5), in which case the CCMPEN code paths are compiled out. Tachi and Tsurugi are unchanged.
+- **Board identification macro follows the Arduino convention**: `ARDUINO_AVR_TACHI` / `ARDUINO_AVR_TSURUGI` / `ARDUINO_AVR_KUNAI` (`boards.txt` `build.board`, passed as `-DARDUINO_{build.board}`), replacing `WAZAMONO_<BOARD>_PINOUT` / `WAZAMONO_BOARD_<BOARD>` / the interim `WAZAMONO_AVR_<BOARD>`. Variants keep a guarded fallback for builds outside the IDE.
 
 ### Documentation
 
-- WazamonoKunai.md / .ja.md: D2 row, PWM section and the XIAO compatibility notes updated for the D0/D2 routing.
+- English is now the primary language: `README.md`, `Installation.md`, `Libraries.md`, `ChangeLog.md`, `CODE_OF_CONDUCT.md`, the library READMEs and the three board documents are English, with Japanese versions as `*.ja.md` (README, board documents). The changelog is maintained in English only.
+- Board documents cross-checked against the pin-configuration tables and variants (timer counts, ADC channel counts, Kunai SPI SS / AC0 inputs, EVOUTD on D9, LED roles); Tsurugi gains a Uno R4 (RA4M1) comparison verified against the Renesas datasheet; benchmark sections (Dhrystone / Whetstone) added.
+- WazamonoKunai.md / .ja.md: D2 row, PWM section and the XIAO compatibility notes updated for the D0/D2 routing; SPI-clock note added to all three board documents (see Ethernet above); clock-options table updated to four entries.
+- `Libraries.md`: Ethernet entry added.
+
+### CI
+
+- `compile-examples.yml` builds the Ethernet examples, and the 16 / 20 / 12 MHz clock options once each (Tachi / Tsurugi / Kunai).
+
+### Verified on hardware
+
+- Kunai rev0.2 ×3 (two 3.3 V, one 5 V): SerialUPDI bootloader flash, USB-CDC enumeration, sketch upload.
+- Tachi rev.5 and Tsurugi: USB-CDC upload; W5100 Ethernet shield on a AVR64DU32 board.
+- Not yet measured: the Kunai LUT2 → D2 PWM route on silicon; 20 / 16 / 12 MHz operation beyond compile checks.
 
 ---
 
