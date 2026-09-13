@@ -246,6 +246,13 @@ The layout therefore differs considerably from the Leonardo.
 >  
 >  
 
+>  
+> **SPI clock note:** The AVR DU SPI prescaler only offers /2, /4, /8 ..., so at 24 MHz a `SPISettings(14000000)` request rounds to **12 MHz** - faster than the Uno R3 (8 MHz).  
+> W5100-based Ethernet shields cannot follow that speed, so the bundled **Ethernet library** requests 8 MHz instead (works at 12/16/20/24 MHz).  
+> Uno R3 Ethernet shields plug in directly with CS = D10 (W5100) / D4 (SD card). D13 (SCK) is shared with Serial2 TX, so do not open Serial2 while Ethernet/SD is in use.  
+> Other SPI devices whose Uno-oriented libraries request around 14 MHz may show the same problem.  
+>  
+
 ---
 
 ### I2C (Wire)

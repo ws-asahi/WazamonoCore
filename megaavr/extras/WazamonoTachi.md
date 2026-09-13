@@ -211,6 +211,11 @@ Basic pin numbers are identical to the Pro Micro; pins that originally lacked an
 > See [libraries/SPISlave](../libraries/SPISlave/README.md) for details.  
 >  
 
+>  
+> **SPI clock note:** The AVR DU SPI prescaler only offers /2, /4, /8 ..., so at 24 MHz a `SPISettings(14000000)` request rounds to **12 MHz** - faster than the Pro Micro (8 MHz).  
+> The bundled **Ethernet library** already requests 8 MHz for the W5100. Pick any GPIO as CS with `Ethernet.init(pin)`. D15 (SCK) is shared with Serial2 TX.  
+>  
+
 ---
 
 ### I2C (Wire)

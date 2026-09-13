@@ -211,6 +211,11 @@ SparkFun Pro Micro と同じ番号付けです。
 > 詳細は [libraries/SPISlave](../libraries/SPISlave/README.md) を参照。  
 >  
 
+>  
+> **SPI クロックの注意:** AVR DU の SPI 分周は /2, /4, /8 ... のため、24 MHz 動作では `SPISettings(14000000)` の要求が **12 MHz** に丸められ、Pro Micro(8 MHz)より速くなります。  
+> 同梱の **Ethernet ライブラリ**は W5100 のためにこの要求を 8 MHz に変更済みです。CS は任意の GPIO を `Ethernet.init(pin)` で指定してください。D15(SCK) は Serial2 の TX と共用です。  
+>  
+
 ---
 
 ### I2C(Wire)

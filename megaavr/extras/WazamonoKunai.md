@@ -231,6 +231,11 @@ Due to hardware constraints there is also no independent LED_BUILTIN.
 
 > Due to hardware constraints, D6 / D7 have no analog input.
 
+>  
+> **SPI clock note:** The AVR DU SPI prescaler only offers /2, /4, /8 ..., so at 24 MHz a `SPISettings(14000000)` request rounds to **12 MHz**.  
+> The bundled **Ethernet library** already requests 8 MHz for the W5100. Pick any GPIO as CS with `Ethernet.init(pin)`.  
+>  
+
 ---
 
 ### Clock output (CLKOUT)

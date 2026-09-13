@@ -48,6 +48,9 @@ The low-level PluggableUSB HID transport (`HID_`) on which HID-Project is built.
 ### Wire
 [Wire readme](../libraries/Wire/README.md) TWI master/slave (dual mode supported). In addition to the full standard API it supports general-call reception, a second address, and an address mask. **The internal pull-ups are not enabled automatically** — call `Wire.usePullups()` if your bus has no pull-up resistors (fitting real resistors is the proper solution).
 
+### Ethernet
+[Ethernet readme](../libraries/Ethernet/README.adoc) The standard Arduino Ethernet library (W5100/W5200/W5500 over SPI), based on arduino-libraries/Ethernet 2.0.2. The bundled copy requests an 8 MHz SPI clock (the stock 14 MHz request rounds to 12 MHz on a 24 MHz AVR DU, which a W5100 cannot follow) and uses atomic OUTSET/OUTCLR chip-select writes. 13 examples included. On Tsurugi, Uno R3 Ethernet shields work as-is (CS = D10, SD CS = D4).
+
 ### SD
 [SD readme](../libraries/SD/README.adoc) The standard Arduino SD card library (FAT16/FAT32 over SPI). 7 examples included.
 
