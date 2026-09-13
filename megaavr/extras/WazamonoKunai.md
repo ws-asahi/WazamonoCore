@@ -120,8 +120,8 @@ Each results are averaged of 5 times.
 
 | Board | MCU | Clock(MHz) | CoreMark 1.0 Iter./Sec | EmbeddedLinpack MFLOPS | Original Shieve Iter./Sec |
 |-------|-----|------------|------------------------|------------------------|---------------------------|
-| Kunai (5.0 V) | AVR32DU20 | 24 | (not tested) | (not tested) | (not tested) |
-| Kunai (3.3 V) | AVR32DU20 | 24 | (not tested) | (not tested) | (not tested) |
+| Kunai (5.0V) | AVR32DU20 | 24 | 14.18 | 0.13 | 18.91 |
+| Kunai (3.3V) | AVR32DU20 | 24 | 14.18 | 0.13 | 18.91 |
 | Seeeduino XIAO | SAMD21G18 | 48 | 51.73 | 0.22 | 87.45 |
 
 ---

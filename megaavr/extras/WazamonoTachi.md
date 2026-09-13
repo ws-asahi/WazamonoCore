@@ -122,8 +122,8 @@ Each results are averaged of 5 times.
 
 | Board | MCU | Clock(MHz) | CoreMark 1.0 Iter./Sec | EmbeddedLinpack MFLOPS | Original Shieve Iter./Sec |
 |-------|-----|------------|------------------------|------------------------|---------------------------|
-| Tachi (5.0V) | AVR64DU32 | 24 | 14.18 | 0.13 | 
-| Tachi (3.3V) | AVR64DU32 | 24 | 14.18 | 0.13 |
+| Tachi (5.0V) | AVR64DU32 | 24 | 14.18 | 0.13 | 18.91 |
+| Tachi (3.3V) | AVR64DU32 | 24 | 14.18 | 0.13 | 18.91 |
 | Pro Micro (5.0V) | ATmega32U4 | 16 | (did not run) | 0.08 | 11.60 |
 | Pro Micro (3.3V) | ATmega32U4 | 8 | (did not run) | 0.04 | 5.77 |
 | Pro Micro (3.3V) | RP2040(Philhower 6.0.0) | 133 | 254.94 | 1.74 | 378.20 |
