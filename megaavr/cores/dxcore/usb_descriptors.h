@@ -35,12 +35,24 @@ extern "C" {
 /* ============================================================
  * Device identity
  * ============================================================ */
-/* Identity (override via boards.txt build flags or variant pins_arduino.h) */
+/* Identity - selected by the board macro (-DARDUINO_{build.board} from
+ * boards.txt), or overridden with -DUSB_VID / -DUSB_PID build flags.
+ * NOTE: this file is compiled from a C translation unit that does NOT
+ * include the variant's pins_arduino.h, so the USB_PID defaults written
+ * there never reach the descriptor - the per-board values must live here.
+ * Keep in sync with boards.txt (<board>.pid.0) and the variant comments.
+ *   Tachi   0x0006   Tsurugi 0x0008   Kunai 0x000A  (pid.codes test range) */
 #ifndef USB_VID
   #define USB_VID               0x1209
 #endif
 #ifndef USB_PID
-  #define USB_PID               0x0006   /* Wazamono Tachi application */
+  #if defined(ARDUINO_AVR_TSURUGI)
+    #define USB_PID             0x0008   /* Wazamono Tsurugi application */
+  #elif defined(ARDUINO_AVR_KUNAI)
+    #define USB_PID             0x000A   /* Wazamono Kunai application */
+  #else
+    #define USB_PID             0x0006   /* Wazamono Tachi application */
+  #endif
 #endif
 #define USB_DEVICE_VER          0x0100
 
@@ -148,7 +160,15 @@ extern const uint8_t g_device_descriptor[18] PROGMEM;
 extern const uint8_t g_config_descriptor[CONFIG_TOTAL_LEN] PROGMEM;
 extern const uint8_t g_string_langid[4] PROGMEM;
 extern const uint8_t g_string_manufacturer[2 + 14 * 2] PROGMEM;
-extern const uint8_t g_string_product[2 + 14 * 2] PROGMEM;
+/* Product string length follows the board name (see USB_PID selection above). */
+#if defined(ARDUINO_AVR_TSURUGI)
+  #define USB_PRODUCT_STRLEN    16      /* "Wazamono Tsurugi" */
+#elif defined(ARDUINO_AVR_KUNAI)
+  #define USB_PRODUCT_STRLEN    14      /* "Wazamono Kunai"   */
+#else
+  #define USB_PRODUCT_STRLEN    14      /* "Wazamono Tachi"   */
+#endif
+extern const uint8_t g_string_product[2 + USB_PRODUCT_STRLEN * 2] PROGMEM;
 extern const uint8_t g_string_serial[2 + 8 * 2] PROGMEM;
 
 #define g_string_manufacturer_len  ((uint8_t)sizeof(g_string_manufacturer))

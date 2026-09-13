@@ -129,11 +129,26 @@ const uint8_t g_string_manufacturer[2 + 14 * 2] PROGMEM = {
 };
 /* g_string_manufacturer_len replaced by a #define in usb_descriptors.h (sizeof at every call site, zero RAM). */
 
-const uint8_t g_string_product[2 + 14 * 2] PROGMEM = {
-    2 + 14 * 2, DESC_TYPE_STRING,
+/* Per-board product string (ARDUINO_AVR_* from boards.txt; see usb_descriptors.h). */
+#if defined(ARDUINO_AVR_TSURUGI)
+const uint8_t g_string_product[2 + USB_PRODUCT_STRLEN * 2] PROGMEM = {
+    2 + USB_PRODUCT_STRLEN * 2, DESC_TYPE_STRING,
+    'W', 0, 'a', 0, 'z', 0, 'a', 0, 'm', 0, 'o', 0, 'n', 0, 'o', 0,
+    ' ', 0, 'T', 0, 's', 0, 'u', 0, 'r', 0, 'u', 0, 'g', 0, 'i', 0
+};
+#elif defined(ARDUINO_AVR_KUNAI)
+const uint8_t g_string_product[2 + USB_PRODUCT_STRLEN * 2] PROGMEM = {
+    2 + USB_PRODUCT_STRLEN * 2, DESC_TYPE_STRING,
+    'W', 0, 'a', 0, 'z', 0, 'a', 0, 'm', 0, 'o', 0, 'n', 0, 'o', 0,
+    ' ', 0, 'K', 0, 'u', 0, 'n', 0, 'a', 0, 'i', 0
+};
+#else
+const uint8_t g_string_product[2 + USB_PRODUCT_STRLEN * 2] PROGMEM = {
+    2 + USB_PRODUCT_STRLEN * 2, DESC_TYPE_STRING,
     'W', 0, 'a', 0, 'z', 0, 'a', 0, 'm', 0, 'o', 0, 'n', 0, 'o', 0,
     ' ', 0, 'T', 0, 'a', 0, 'c', 0, 'h', 0, 'i', 0
 };
+#endif
 /* g_string_product_len replaced by a #define in usb_descriptors.h (sizeof at every call site, zero RAM). */
 
 const uint8_t g_string_serial[2 + 8 * 2] PROGMEM = {
