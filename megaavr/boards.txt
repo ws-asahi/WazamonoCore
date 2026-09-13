@@ -21,7 +21,7 @@ menu.usbeps=USB Endpoints
 # =====================  Wazamono Tachi (AVR64DU32)  ==================
 wazamonotachi.name=Wazamono Tachi (Pro Micro)
 
-wazamonotachi.upload.tool=avrdude
+wazamonotachi.upload.tool=wzavrdude
 wazamonotachi.upload.prog_interlock=
 wazamonotachi.vid.0=0x1209
 wazamonotachi.pid.0=0x0006
@@ -47,7 +47,7 @@ wazamonotachi.build.export_merged_output=false
 wazamonotachi.build.printf=
 wazamonotachi.build.flmapopts=
 wazamonotachi.build.attachmode=-DCORE_ATTACH_ALL
-wazamonotachi.bootloader.tool=avrdude
+wazamonotachi.bootloader.tool=wzavrdude
 wazamonotachi.bootloader.WDTCFG=0b{bootloader.wdtwindowbits}{bootloader.wdttimeoutbits}
 wazamonotachi.bootloader.wdtwindowbits=0000
 wazamonotachi.bootloader.BODCFG=0x00
@@ -134,7 +134,7 @@ wazamonotachi.bootloader.class=usbcdcboot_wazamonotachi
 # =====================  Wazamono Tsurugi (AVR64DU32)  ===============
 wazamonotsurugi.name=Wazamono Tsurugi (Uno)
 
-wazamonotsurugi.upload.tool=avrdude
+wazamonotsurugi.upload.tool=wzavrdude
 wazamonotsurugi.upload.prog_interlock=
 wazamonotsurugi.vid.0=0x1209
 wazamonotsurugi.pid.0=0x0008
@@ -159,7 +159,7 @@ wazamonotsurugi.build.export_merged_output=false
 wazamonotsurugi.build.printf=
 wazamonotsurugi.build.flmapopts=
 wazamonotsurugi.build.attachmode=-DCORE_ATTACH_ALL
-wazamonotsurugi.bootloader.tool=avrdude
+wazamonotsurugi.bootloader.tool=wzavrdude
 wazamonotsurugi.bootloader.WDTCFG=0b{bootloader.wdtwindowbits}{bootloader.wdttimeoutbits}
 wazamonotsurugi.bootloader.wdtwindowbits=0000
 wazamonotsurugi.bootloader.BODCFG=0x00
@@ -228,7 +228,7 @@ wazamonotsurugi.bootloader.class=usbcdcboot_wazamonotsurugi
 # =====================  Wazamono Kunai (AVR32DU20)  ================
 wazamonokunai.name=Wazamono Kunai (Xiao)
 
-wazamonokunai.upload.tool=avrdude
+wazamonokunai.upload.tool=wzavrdude
 wazamonokunai.upload.prog_interlock=
 wazamonokunai.vid.0=0x1209
 wazamonokunai.pid.0=0x000A
@@ -255,7 +255,7 @@ wazamonokunai.build.export_merged_output=false
 wazamonokunai.build.printf=
 wazamonokunai.build.flmapopts=
 wazamonokunai.build.attachmode=-DCORE_ATTACH_ALL
-wazamonokunai.bootloader.tool=avrdude
+wazamonokunai.bootloader.tool=wzavrdude
 wazamonokunai.bootloader.WDTCFG=0b{bootloader.wdtwindowbits}{bootloader.wdttimeoutbits}
 wazamonokunai.bootloader.wdtwindowbits=0000
 wazamonokunai.bootloader.BODCFG=0x00

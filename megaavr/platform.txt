@@ -170,42 +170,52 @@ recipe.hooks.savehex.presavehex.2.pattern.macosx=cp "{build.path}/{build.project
 ## Unused but required parameters
 # We always verify, and ignore user instruction otherwise. If this is not done, the device may fail to recognize that an upload was unsuccessful, and then the user would be debugging a sketch that just didn't seem to change the behavior of the hardware at all.
 # As, for all upload methods supported, the verification time is very short compared to the overall process of upload from the IDE.
-tools.avrdude.program.verify=
-tools.avrdude.upload.verify=
+tools.wzavrdude.program.verify=
+tools.wzavrdude.upload.verify=
 
 # the erase pattern, if defined, is used I think immediately prior to bootloading only, but bootloading can be done in a single operation; there is no need for this.
-tools.avrdude.erase.params.verbose=
-tools.avrdude.erase.params.quiet=
-tools.avrdude.erase.pattern=
+tools.wzavrdude.erase.params.verbose=
+tools.wzavrdude.erase.params.quiet=
+tools.wzavrdude.erase.pattern=
 
 ## avrdude-related paths
-tools.avrdude.path={runtime.tools.avrdude.path}
-tools.avrdude.cmd.path={path}/bin/avrdude
-tools.avrdude.config.path={path}/etc/avrdude.conf
-tools.avrdude.network_cmd={runtime.tools.arduinoOTA.path}/bin/arduinoOTA
+# The tool is deliberately NOT named "avrdude": arduino-cli force-sets
+# tools.<name>.path to {runtime.tools.<name>.path} for every tool name it has
+# installed (platform.txt and platform.local.txt values are ignored), so a
+# tool called "avrdude" can never be pointed anywhere else. With a manual
+# (sketchbook hardware) install that meant the newest avrdude of *any* package
+# (e.g. arduino:avrdude) got used. "wzavrdude" matches no installed tool, so
+# the path below - or the platform.local.txt override written by
+# make_platform_local.bat for manual installs - is honoured as written.
+# Board Manager installs resolve {runtime.tools.avrdude.path} from the
+# package index toolsDependencies (avrdude 8.1-wazamonoN), so no override is needed.
+tools.wzavrdude.path={runtime.tools.avrdude.path}
+tools.wzavrdude.cmd.path={path}/bin/avrdude
+tools.wzavrdude.config.path={path}/etc/avrdude.conf
+tools.wzavrdude.network_cmd={runtime.tools.arduinoOTA.path}/bin/arduinoOTA
 
 ## Used for Sketch -> Upload using Programmer or uploads without a bootloader
-tools.avrdude.program.params.verbose=-v
-tools.avrdude.program.params.quiet=-q -q
-tools.avrdude.program.params.noverify=
-tools.avrdude.program.pattern={upload.prog_interlock}"{cmd.path}" "-C{config.path}" {program.verbose} {program.verify} -p{build.mcu} -c{protocol} {program.extra_params} "-Ufuse2:w:{bootloader.OSCCFG}:m" {program.avrdudefuse5} "-Ufuse6:w:{bootloader.SYSCFG1}:m" "-Ufuse7:w:{bootloader.CODESIZE}:m" "-Ufuse8:w:{bootloader.BOOTSIZE}:m" "-Uflash:w:{build.path}/{build.project_name}.hex:i"
+tools.wzavrdude.program.params.verbose=-v
+tools.wzavrdude.program.params.quiet=-q -q
+tools.wzavrdude.program.params.noverify=
+tools.wzavrdude.program.pattern={upload.prog_interlock}"{cmd.path}" "-C{config.path}" {program.verbose} {program.verify} -p{build.mcu} -c{protocol} {program.extra_params} "-Ufuse2:w:{bootloader.OSCCFG}:m" {program.avrdudefuse5} "-Ufuse6:w:{bootloader.SYSCFG1}:m" "-Ufuse7:w:{bootloader.CODESIZE}:m" "-Ufuse8:w:{bootloader.BOOTSIZE}:m" "-Uflash:w:{build.path}/{build.project_name}.hex:i"
 
 ## Used for "upload" through bootloader
-tools.avrdude.upload.params.verbose=-v
-tools.avrdude.upload.params.quiet=-q -q
-tools.avrdude.upload.params.noverify=
-tools.avrdude.upload.pattern="{cmd.path}" "-C{config.path}" {upload.verbose} {upload.verify} -p{build.mcu} -c{upload.protocol} {upload.extra_params} -P{serial.port} -b{upload.speed} "-Uflash:w:{build.path}/{build.project_name}.hex:i"
+tools.wzavrdude.upload.params.verbose=-v
+tools.wzavrdude.upload.params.quiet=-q -q
+tools.wzavrdude.upload.params.noverify=
+tools.wzavrdude.upload.pattern="{cmd.path}" "-C{config.path}" {upload.verbose} {upload.verify} -p{build.mcu} -c{upload.protocol} {upload.extra_params} -P{serial.port} -b{upload.speed} "-Uflash:w:{build.path}/{build.project_name}.hex:i"
 
 ## Used for Tools -> Burn Bootloader
-tools.avrdude.bootloader.params.verbose=-v
-tools.avrdude.bootloader.params.quiet=-q -q
-tools.avrdude.bootloader.params.noverify=
-tools.avrdude.bootloader.pattern="{cmd.path}" "-C{config.path}" {bootloader.verbose} -p{build.mcu} -c{protocol} {program.extra_params} -e "-Ufuse0:w:{bootloader.WDTCFG}:m" "-Ufuse1:w:{bootloader.BODCFG}:m" "-Ufuse2:w:{bootloader.OSCCFG}:m" {bootloader.avrdudefuse5} "-Ufuse6:w:{bootloader.SYSCFG1}:m" "-Ufuse8:w:{bootloader.BOOTSIZE}:m" "-Ufuse7:w:{bootloader.CODESIZE}:m" "{bootloader.avrdudestring}"
+tools.wzavrdude.bootloader.params.verbose=-v
+tools.wzavrdude.bootloader.params.quiet=-q -q
+tools.wzavrdude.bootloader.params.noverify=
+tools.wzavrdude.bootloader.pattern="{cmd.path}" "-C{config.path}" {bootloader.verbose} -p{build.mcu} -c{protocol} {program.extra_params} -e "-Ufuse0:w:{bootloader.WDTCFG}:m" "-Ufuse1:w:{bootloader.BODCFG}:m" "-Ufuse2:w:{bootloader.OSCCFG}:m" {bootloader.avrdudefuse5} "-Ufuse6:w:{bootloader.SYSCFG1}:m" "-Ufuse8:w:{bootloader.BOOTSIZE}:m" "-Ufuse7:w:{bootloader.CODESIZE}:m" "{bootloader.avrdudestring}"
 
 ## OTA/Remote upload
 # This functionality has never been tested with these parts. The maintainers of this core have no idea what this is, or whether it is expected to work.
 tools.avrdude_remote.upload.pattern=/usr/bin/run-avrdude /tmp/sketch.hex {upload.verbose} -p{build.mcu}
-tools.avrdude.upload.network_pattern="{network_cmd}" -address {serial.port} -port 65280 -username arduino -password "{network.password}" -sketch "{build.path}/{build.project_name}.bin" -upload /sketch -d -v
+tools.wzavrdude.upload.network_pattern="{network_cmd}" -address {serial.port} -port 65280 -username arduino -password "{network.password}" -sketch "{build.path}/{build.project_name}.bin" -upload /sketch -d -v
 
 ##############################################################
 # Serial UPDI - UPDI uploads using a serial adapter directly #

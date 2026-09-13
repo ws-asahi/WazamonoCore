@@ -71,7 +71,12 @@ This is how to install when developing or modifying the core itself. **For norma
    With a manual installation the IDE does not resolve the toolchain automatically, so
    the IDE's stock avr-gcc 7.3.0 (which does not support the AVR DU) would be used and the build would fail.
    Run `megaavr\make_platform_local.bat` to generate a `platform.local.txt` that points at
-   your local avr-gcc 15.x (see the comments at the top of the batch file for details).
+   your local avr-gcc 15.x and avrdude (see the comments at the top of the batch file for details).
+   Expected layout: `Arduino\tools\avr-gcc\15.2.0-wazamonoN\` and `Arduino\tools\avrdude\8.1-wazamonoN\`
+   (each with `bin\` and, for avrdude, `etc\avrdude.conf`). Without the avrdude entry the IDE silently
+   falls back to whatever avrdude it has installed (e.g. `arduino:avrdude 8.0.0`) for uploads and
+   **Burn Bootloader** - it cannot be redirected from platform.txt because arduino-cli overrides
+   `tools.avrdude.path`, which is why WazamonoCore names the tool `wzavrdude`.
 
 4. Restart the Arduino IDE.
 

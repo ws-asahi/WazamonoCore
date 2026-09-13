@@ -77,10 +77,16 @@ if not defined GCCDIR goto :nogcc
 if not exist "%GCCDIR%\bin\avr-gcc.exe" goto :nogcc
 set "GCCFWD=%GCCDIR:\=/%"
 
-REM --- avrdude (optional; needed to UPLOAD over the USB-CDC bootloader) ---
+REM --- avrdude (optional; needed to UPLOAD over the USB-CDC bootloader
+REM     and to BURN the bootloader) ---
 REM Expects the normalized Wazamono layout: <dir>\bin\avrdude.exe and
 REM <dir>\etc\avrdude.conf (same layout the Board Manager package uses;
-REM platform.txt derives cmd.path/config.path from tools.avrdude.path).
+REM platform.txt derives cmd.path/config.path from tools.wzavrdude.path).
+REM The tool is named "wzavrdude" in platform.txt on purpose: arduino-cli
+REM force-sets tools.avrdude.path to {runtime.tools.avrdude.path} (any
+REM installed avrdude, e.g. arduino:avrdude 8.0.0), ignoring platform.txt
+REM and platform.local.txt - so "tools.avrdude.path" here would never work.
+REM Preferred folder: Arduino\tools\avrdude\8.1-wazamonoN\
 set "DUDEDIR="
 for /d %%d in ("%TOOLS%\avrdude\*") do set "DUDEDIR=%%~fd"
 if not defined DUDEDIR for /d %%d in ("%AVRGCC_ROOT%\avrdude*") do set "DUDEDIR=%%~fd"
@@ -97,8 +103,8 @@ chcp 65001 >nul
 if not defined DUDEDIR goto :nodude
 set "DUDEFWD=%DUDEDIR:\=/%"
 >> platform.local.txt echo.
->> platform.local.txt echo # avrdude with avr64du32 support (sketch upload + burn bootloader)
->> platform.local.txt echo tools.avrdude.path=%DUDEFWD%/
+>> platform.local.txt echo # avrdude with AVR DU support (sketch upload + burn bootloader)
+>> platform.local.txt echo tools.wzavrdude.path=%DUDEFWD%
 :nodude
 chcp %OLDCP% >nul
 
@@ -111,7 +117,7 @@ echo Wrote platform.local.txt:
 echo ------------------------------------------------------------
 type platform.local.txt
 echo ------------------------------------------------------------
-if not defined DUDEDIR echo NOTE: no avrdude found under "%TOOLS%\avrdude" - upload over USB-CDC bootloader will use the IDE default avrdude (no avr64du32 support).
+if not defined DUDEDIR echo NOTE: no avrdude found under "%TOOLS%\avrdude" - upload / burn bootloader will use whatever avrdude the IDE has installed (e.g. arduino:avrdude 8.0.0), which is NOT the Wazamono build.
 echo Restart the Arduino IDE so the new platform.local.txt is picked up.
 popd
 endlocal
