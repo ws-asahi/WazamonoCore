@@ -54,7 +54,21 @@ typedef enum {
 USB_EP_TABLE_t g_bl_ep_table __attribute__((aligned(2)));
 
 uint8_t  g_bl_ep0_setup[8]                    __attribute__((aligned(2)));
-uint8_t  g_bl_ep0_data[USB_BL_EP0_SIZE]       __attribute__((aligned(2)));
+/* EP0 IN scratch.  Sized for the largest descriptor we ever return
+ * (the 67-byte configuration descriptor), not for one packet: the USB
+ * peripheral reads endpoint data buffers from internal SRAM only
+ * (DS40002548B/DS40002576B 28.3 "Endpoint Configuration Tables and Data
+ * Buffers are Located in the Device's Internal RAM"), so every IN
+ * payload - single- or multi-packet - is staged here first.  On the
+ * avr64du parts .rodata happens to live in SRAM (-mrodata-in-ram), which
+ * hid the zero-copy bug; on the fully-mapped avr16/32du parts .rodata is
+ * flash at 0x8000+ and a DATAPTR into it yields garbage on the bus. */
+#if USB_BL_CONFIG_TOTAL_LEN > USB_BL_EP0_SIZE
+#define USB_BL_EP0_DATA_LEN USB_BL_CONFIG_TOTAL_LEN
+#else
+#define USB_BL_EP0_DATA_LEN USB_BL_EP0_SIZE
+#endif
+uint8_t  g_bl_ep0_data[USB_BL_EP0_DATA_LEN]   __attribute__((aligned(2)));
 uint8_t  g_bl_ep1_in [USB_BL_EP1_SIZE]        __attribute__((aligned(2)));
 uint8_t  g_bl_ep2_out[USB_BL_EP2_SIZE]        __attribute__((aligned(2)));
 uint8_t  g_bl_ep3_in [USB_BL_EP3_SIZE]        __attribute__((aligned(2)));
@@ -113,20 +127,21 @@ static void ep0_stall(void) {
 static void ep0_start_data_in(const uint8_t *data, uint16_t len, uint16_t host_requested) {
     if (len > host_requested) len = host_requested;
 
+    /* Always stage through SRAM scratch - the USB peripheral cannot read
+     * from the flash-mapped data space (see g_bl_ep0_data). */
+    if (len > USB_BL_EP0_DATA_LEN) len = USB_BL_EP0_DATA_LEN;
+    for (uint16_t i = 0; i < len; i++) g_bl_ep0_data[i] = data[i];
+    g_bl_ep_table.EP[0].IN.DATAPTR = (uint16_t)g_bl_ep0_data;
+    g_bl_ep_table.EP[0].IN.CNT     = len;
+    g_bl_ep_table.EP[0].IN.MCNT    = 0;
+
     if (len <= USB_BL_EP0_SIZE) {
-        /* Single-packet: copy to scratch */
-        for (uint16_t i = 0; i < len; i++) g_bl_ep0_data[i] = data[i];
-        g_bl_ep_table.EP[0].IN.DATAPTR = (uint16_t)g_bl_ep0_data;
-        g_bl_ep_table.EP[0].IN.CNT     = len;
-        g_bl_ep_table.EP[0].IN.MCNT    = 0;
+        /* Single-packet */
         g_bl_ep_table.EP[0].IN.CTRL    = USB_TYPE_CONTROL_gc | USB_BUFSIZE_DEFAULT_BUF64_gc;
     } else {
         /* Multi-packet (configuration descriptor at 67 B is the only
          * case here, but coding it general lets us avoid a special
          * path for any future descriptor that might grow). */
-        g_bl_ep_table.EP[0].IN.DATAPTR = (uint16_t)data;
-        g_bl_ep_table.EP[0].IN.CNT     = len;
-        g_bl_ep_table.EP[0].IN.MCNT    = 0;
         g_bl_ep_table.EP[0].IN.CTRL    = USB_TYPE_CONTROL_gc | USB_MULTIPKT_bm
                                        | USB_AZLP_bm | USB_BUFSIZE_DEFAULT_BUF64_gc;
     }

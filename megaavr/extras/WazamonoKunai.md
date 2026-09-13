@@ -325,9 +325,15 @@ Four settings are available under **Tools > Clock Speed** in the Arduino IDE.
 2. Upload the sketch from the Arduino IDE. A **1200 bps touch** is performed at the start of the upload and the board enters the USB CDC bootloader automatically.
 3. If it does not enter the bootloader automatically, **double-tap the reset pad with a jumper wire**.
 
-For the first flash, or to rewrite the USB bootloader, connect a UPDI programmer (PICkit 4/5, Atmel-ICE, jtag2updi, etc.) to the UPDI pad.
+For the first flash, or to rewrite the USB bootloader, connect a UPDI programmer (PICkit 4/5, Atmel-ICE, SerialUPDI, etc.) to the UPDI pad. Check the following first:
 
-<sub>The development VID/PID is from the pid.codes test range (application `0x1209:0x0006` / bootloader `0x1209:0x0005`).</sub>
+1. **Bridge JP1.** Boards ship with both the 5V and 3.3V sides open; until JP1 is bridged the MCU's VDD is unpowered (the power LED is on the LDO output, so it lights anyway).
+2. **Check the real layout of the back pads.** The pads behind the USB connector replace the XIAO's SWDIO / SWCLK positions with VCC / UPDI.
+   **rev0.2 erratum:** the silkscreen for these two pads is **swapped** relative to the actual circuit. The pad marked `VCC` is UPDI (PF7); the pad marked `UPDI` is VCC.
+   PF7 has its internal pull-up enabled from the factory, so with the board powered over USB the UPDI pad reads close to VDD - an easy way to tell them apart.
+3. UPDI only needs GND and UPDI. Power the board from USB and leave the programmer's VCC output unconnected.
+
+<sub>The development VID/PID is from the pid.codes test range (application `0x1209:0x000A` / bootloader `0x1209:0x0009`).</sub>
 
 ---
 
