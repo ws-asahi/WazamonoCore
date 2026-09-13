@@ -280,16 +280,21 @@ Basic pin numbers are identical to the Pro Micro; pins that originally lacked an
 
 ### Clock speed options
 
-Two settings are available under **Tools > Clock Speed** in the Arduino IDE.
+Four settings are available under **Tools > Clock Speed** in the Arduino IDE.
 
 | Menu | F_CPU | Typical use |
 |------|-------|-------------|
 | 24 MHz internal (default) | 24 MHz | Normal use |
+| 20 MHz internal | 20 MHz | Timing compatibility with 20 MHz AVRs (e.g. ATtiny) |
 | 16 MHz internal | 16 MHz | Timing compatibility with classic AVR (16 MHz), lower power |
+| 12 MHz internal | 12 MHz | Lower power (the minimum when USB is in use) |
 
 >  
+> The 48 MHz USB clock (CLK_USB) is generated from OSCHF's fixed 4 MHz tap and PLL48M, independent of the main clock (CLK_PER).  
+> CLK_PER only needs to be 12 MHz or higher (DS40002548B 28.3.1.1), so USB-CDC works with every option above.  
 > PWM frequency and timing functions such as `delayMicroseconds()` follow F_CPU.  
-> `millis()` / `micros()` work correctly with either option.  
+> `millis()` / `micros()` work correctly with every option.  
+> On-hardware testing has been done mainly at 24 MHz.  
 >  
 
 ---

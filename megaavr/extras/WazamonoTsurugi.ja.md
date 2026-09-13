@@ -319,16 +319,21 @@ Arduino Uno R3 と同じ番号付けです。
 
 ### クロック速度の選択肢
 
-Arduino IDE の「ツール > Clock Speed」で次の 2 つを選べます。
+Arduino IDE の「ツール > Clock Speed」で次の 4 つを選べます。
 
 | メニュー | F_CPU | 主な用途 |
 |---------|-------|---------|
 | 24 MHz internal(既定) | 24 MHz | 通常はこちら |
+| 20 MHz internal | 20 MHz | 20 MHz 系 AVR(ATtiny 等)とのタイミング互換 |
 | 16 MHz internal | 16 MHz | classic AVR(16 MHz)とのタイミング互換、省電力 |
+| 12 MHz internal | 12 MHz | 省電力(USB を使う場合の下限) |
 
 >  
+> USB の 48 MHz(CLK_USB)は OSCHF の固定 4 MHz 出力と PLL48M から作られ、主クロック(CLK_PER)とは独立です。  
+> CLK_PER は 12 MHz 以上が必要なので(DS40002548B 28.3.1.1)、上記のどのクロックでも USB-CDC は動作します。  
 > PWM の周波数と `delayMicroseconds()` などの時間処理は F_CPU に追従します。  
-> `millis()` / `micros()` はどちらの選択肢でも正しく動作します。  
+> `millis()` / `micros()` はどの選択肢でも正しく動作します。  
+> 実機での動作確認は 24 MHz を中心に行っています。  
 >  
 
 ---

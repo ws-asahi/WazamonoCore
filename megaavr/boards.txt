@@ -89,15 +89,22 @@ wazamonotachi.upload.wait_for_upload_port=true
 wazamonotachi.bootloader.file=hex/{bootloader.class}.hex
 wazamonotachi.bootloader.appspm=
 
-# --- Clock menu: single entry, 24 MHz internal OSCHF (crystal-less board).
-#     clocksource 0 = internal OSCHF. USB CLK_USB (48 MHz) = OSCHF + PLL48M,
-#     SOF-tuned. PA0/PA1 are not connected on this board (reserved). ---
+# --- Clock menu: internal OSCHF (crystal-less board), 24 MHz default; 12/16/20 MHz selectable.
+#     clocksource 0 = internal OSCHF. USB CLK_USB (48 MHz) = OSCHF's fixed 4 MHz tap + PLL48M,
+#     SOF-tuned, so it is independent of the main clock (CLK_PER only needs to be >= 12 MHz,
+#     DS40002548B 28.3.1.1). PA0/PA1 are not connected on this board (reserved). ---
 wazamonotachi.menu.clock.24internal=24 MHz internal
 wazamonotachi.menu.clock.24internal.build.speed=24
 wazamonotachi.menu.clock.24internal.build.clocksource=0
 wazamonotachi.menu.clock.16internal=16 MHz internal
 wazamonotachi.menu.clock.16internal.build.speed=16
 wazamonotachi.menu.clock.16internal.build.clocksource=0
+wazamonotachi.menu.clock.20internal=20 MHz internal
+wazamonotachi.menu.clock.20internal.build.speed=20
+wazamonotachi.menu.clock.20internal.build.clocksource=0
+wazamonotachi.menu.clock.12internal=12 MHz internal
+wazamonotachi.menu.clock.12internal.build.speed=12
+wazamonotachi.menu.clock.12internal.build.clocksource=0
 
 # --- millis()/micros() timer. TCB0 is the default so TCB1 stays free for
 #     D3 PWM and TCA0 stays free for D5-D10 PWM. ---
@@ -190,15 +197,22 @@ wazamonotsurugi.upload.wait_for_upload_port=true
 wazamonotsurugi.bootloader.file=hex/{bootloader.class}.hex
 wazamonotsurugi.bootloader.appspm=
 
-# --- Clock menu: single entry, 24 MHz internal OSCHF. Board rev.C carries
-#     no crystal: PA0/PA1 are the CDC TX/RX activity LEDs. USB's 48 MHz comes
-#     from PLL48M auto-tuned to the USB SOF, independent of CLK_PER. ---
+# --- Clock menu: internal OSCHF, 24 MHz default; 12/16/20 MHz selectable. Board rev.C carries
+#     no crystal: PA0/PA1 are the CDC TX/RX activity LEDs. USB's 48 MHz comes from OSCHF's
+#     fixed 4 MHz tap + PLL48M auto-tuned to the USB SOF, independent of CLK_PER
+#     (CLK_PER only needs to be >= 12 MHz, DS40002548B 28.3.1.1). ---
 wazamonotsurugi.menu.clock.24internal=24 MHz internal
 wazamonotsurugi.menu.clock.24internal.build.speed=24
 wazamonotsurugi.menu.clock.24internal.build.clocksource=0
 wazamonotsurugi.menu.clock.16internal=16 MHz internal
 wazamonotsurugi.menu.clock.16internal.build.speed=16
 wazamonotsurugi.menu.clock.16internal.build.clocksource=0
+wazamonotsurugi.menu.clock.20internal=20 MHz internal
+wazamonotsurugi.menu.clock.20internal.build.speed=20
+wazamonotsurugi.menu.clock.20internal.build.clocksource=0
+wazamonotsurugi.menu.clock.12internal=12 MHz internal
+wazamonotsurugi.menu.clock.12internal.build.speed=12
+wazamonotsurugi.menu.clock.12internal.build.clocksource=0
 
 # --- Locked to AVR64DU32. Variant + bootloader hex fixed to Wazamono Tsurugi. ---
 wazamonotsurugi.build.mcu=avr64du32
@@ -279,14 +293,22 @@ wazamonokunai.upload.wait_for_upload_port=true
 wazamonokunai.bootloader.file=hex/{bootloader.class}.hex
 wazamonokunai.bootloader.appspm=
 
-# --- Clock menu: single entry, 24 MHz internal OSCHF (crystal-less board). ---
-#  clocksource 0 = internal OSCHF. USB CLK_USB (48 MHz) = OSCHF + PLL48M, SOF-tuned.
+# --- Clock menu: internal OSCHF (crystal-less board), 24 MHz default; 12/16/20 MHz selectable. ---
+#  clocksource 0 = internal OSCHF. USB CLK_USB (48 MHz) = OSCHF's fixed 4 MHz tap + PLL48M,
+#  SOF-tuned, so it is independent of the main clock (CLK_PER only needs to be >= 12 MHz,
+#  DS40002548B 28.3.1.1).
 wazamonokunai.menu.clock.24internal=24 MHz internal
 wazamonokunai.menu.clock.24internal.build.speed=24
 wazamonokunai.menu.clock.24internal.build.clocksource=0
 wazamonokunai.menu.clock.16internal=16 MHz internal
 wazamonokunai.menu.clock.16internal.build.speed=16
 wazamonokunai.menu.clock.16internal.build.clocksource=0
+wazamonokunai.menu.clock.20internal=20 MHz internal
+wazamonokunai.menu.clock.20internal.build.speed=20
+wazamonokunai.menu.clock.20internal.build.clocksource=0
+wazamonokunai.menu.clock.12internal=12 MHz internal
+wazamonokunai.menu.clock.12internal.build.speed=12
+wazamonokunai.menu.clock.12internal.build.clocksource=0
 
 # --- Locked to AVR32DU20. Variant + bootloader hex fixed to Wazamono Kunai. ---
 wazamonokunai.build.mcu=avr32du20
