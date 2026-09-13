@@ -40,11 +40,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # The Clock menu has a single entry (24internal) on every board;
-          # spell it out anyway so the FQBN stays valid if more clock options
-          # are reintroduced later. usbeps defaults to the first entry (ep8),
-          # so both endpoint variants are spelled out explicitly; the ep16
-          # build (USB_EP_SLOTS=16) is covered once, on Tachi.
+          # The Clock menu offers 24/20/16/12 MHz internal on every board
+          # (24internal is the default). usbeps defaults to the first entry
+          # (ep8), so both endpoint variants are spelled out explicitly; the
+          # ep16 build (USB_EP_SLOTS=16) is covered once, on Tachi.
           - board: "Wazamono Tachi (AVR64DU32)"
             fqbn: "WazamonoCore:megaavr:wazamonotachi:clock=24internal,usbeps=ep8"
           - board: "Wazamono Tachi (AVR64DU32, 16 EP)"
@@ -53,11 +52,15 @@ jobs:
             fqbn: "WazamonoCore:megaavr:wazamonotsurugi:clock=24internal,usbeps=ep8"
           - board: "Wazamono Kunai (AVR32DU20)"
             fqbn: "WazamonoCore:megaavr:wazamonokunai:clock=24internal,usbeps=ep8"
-          # Clock menu coverage: the 16 MHz option is compiled once, on the
-          # Tachi, to keep the matrix small. USB stays available at 16 MHz
-          # (CLK_PER >= 12 MHz per DS40002548B 28.3.1.1).
+          # Clock menu coverage: each non-default clock is compiled once, on
+          # a different board, to keep the matrix small. USB stays available
+          # down to 12 MHz (CLK_PER >= 12 MHz per DS40002548B 28.3.1.1).
           - board: "Wazamono Tachi (AVR64DU32, 16 MHz)"
             fqbn: "WazamonoCore:megaavr:wazamonotachi:clock=16internal,usbeps=ep8"
+          - board: "Wazamono Tsurugi (AVR64DU32, 20 MHz)"
+            fqbn: "WazamonoCore:megaavr:wazamonotsurugi:clock=20internal,usbeps=ep8"
+          - board: "Wazamono Kunai (AVR32DU20, 12 MHz)"
+            fqbn: "WazamonoCore:megaavr:wazamonokunai:clock=12internal,usbeps=ep8"
 
     steps:
       - name: Checkout repository
@@ -75,6 +78,7 @@ jobs:
             - megaavr/libraries/AnalogComp/examples
             - megaavr/libraries/Wire/examples
             - megaavr/libraries/SPI/examples
+            - megaavr/libraries/Ethernet/examples
             - megaavr/libraries/Servo/examples
             - megaavr/libraries/tinyNeoPixel_Static/examples
             - megaavr/libraries/SoftwareSerial/examples
