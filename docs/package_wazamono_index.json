@@ -12,15 +12,15 @@
         {
           "name": "Wazamono Boards (AVR DU series)",
           "architecture": "megaavr",
-          "version": "0.0.6",
+          "version": "0.0.7",
           "category": "Contributed",
           "help": {
             "online": "https://github.com/ws-asahi/WazamonoCore"
           },
-          "url": "https://github.com/ws-asahi/WazamonoCore/releases/download/v0.0.6/WazamonoCore-0.0.6.tar.bz2",
-          "archiveFileName": "WazamonoCore-0.0.6.tar.bz2",
-          "checksum": "SHA-256:045510c4ce2a75b6f69ad456661660645495b43279af1dd865ff5d83e5b4e249",
-          "size": "3734619",
+          "url": "https://github.com/ws-asahi/WazamonoCore/releases/download/v0.0.7/WazamonoCore-0.0.7.tar.bz2",
+          "archiveFileName": "WazamonoCore-0.0.7.tar.bz2",
+          "checksum": "SHA-256:e53f9e26510d5beb53b55ba5771db8fe2ec65225157ec85cc4ec8104034ef656",
+          "size": "3791760",
           "boards": [
             {
               "name": "Wazamono Tachi (AVR64DU32)"
