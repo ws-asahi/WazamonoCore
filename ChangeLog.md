@@ -4,6 +4,12 @@ The change history of WazamonoCore. WazamonoCore is the Arduino core for the Waz
 
 ---
 
+## Unreleased
+
+### Manual (sketchbook) installs
+
+- **`make_platform_local.bat` / `platform.local.txt` replaced by `tools/setup_toolchain.{sh,bat}`.** `platform.local.txt` only affects compilation: for sketch upload and *Burn Bootloader* arduino-cli falls back to `{runtime.tools.<name>.path}`, and Arduino IDE 2 does not scan the sketchbook's `Arduino/tools/` at all, so a manual install could still end up with a foreign `avrdude`. The new scripts read `docs/package_wazamono_index.json`, download the avr-gcc / avrdude versions it lists from the wazamono-toolchain releases (SHA-256 verified) and place them under `hardware/WazamonoCore/tools/<name>/<version>/` — the one location IDE 2 / arduino-cli registers as `{runtime.tools.<name>-<version>.path}`. `platform.txt` now pins those exact versions (`avr-gcc-15.2.0-wazamono2`, `avrdude-8.1-wazamono2`) for `compiler.path` and `tools.wzavrdude.path`, so Board Manager and manual installs resolve identically; the scripts warn if the pin and the index drift apart and delete a leftover `platform.local.txt`.
+
 ## v0.0.7 — Kunai bring-up, Tachi pin map rev.5, Ethernet shield support
 
 The first release in which all three boards (Tachi rev.5, Tsurugi rev.C, Kunai rev0.2) were brought up on real hardware from a blank MCU: SerialUPDI bootloader flash, USB-CDC enumeration, sketch upload and a common GPIO/ADC/PWM loop-back check. Two bugs that blocked the Kunai were found and fixed (USB enumeration on the AVR32DU20, and the manual-install `avrdude` selection), and every board now enumerates with its own USB identity. The W5100 Ethernet library is bundled with the SPI-clock fix the AVR DU needs, and the Clock menu grew to 24/20/16/12 MHz.

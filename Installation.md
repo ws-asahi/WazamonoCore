@@ -67,16 +67,33 @@ This is how to install when developing or modifying the core itself. **For norma
    - macOS example: `~/Documents/Arduino/hardware/WazamonoCore/`
    - Linux example: `~/Arduino/hardware/WazamonoCore/`
 
-3. **Configure the toolchain (required for manual installation).**
+3. **Install the toolchain (required for manual installation).**
    With a manual installation the IDE does not resolve the toolchain automatically, so
    the IDE's stock avr-gcc 7.3.0 (which does not support the AVR DU) would be used and the build would fail.
-   Run `megaavr\make_platform_local.bat` to generate a `platform.local.txt` that points at
-   your local avr-gcc 15.x and avrdude (see the comments at the top of the batch file for details).
-   Expected layout: `Arduino\tools\avr-gcc\15.2.0-wazamonoN\` and `Arduino\tools\avrdude\8.1-wazamonoN\`
-   (each with `bin\` and, for avrdude, `etc\avrdude.conf`). Without the avrdude entry the IDE silently
-   falls back to whatever avrdude it has installed (e.g. `arduino:avrdude 8.0.0`) for uploads and
-   **Burn Bootloader** - it cannot be redirected from platform.txt because arduino-cli overrides
-   `tools.avrdude.path`, which is why WazamonoCore names the tool `wzavrdude`.
+   Run the script in `tools\`. It reads `docs\package_wazamono_index.json` (the Boards Manager
+   index), downloads the avr-gcc / avrdude versions it lists from the
+   [wazamono-toolchain](https://github.com/ws-asahi/wazamono-toolchain) releases (SHA-256 verified)
+   and places them under `hardware\WazamonoCore\tools\`:
+
+   - Windows: double-click `tools\setup_toolchain.bat` (or run it from `cmd`)
+   - macOS / Linux: `tools/setup_toolchain.sh` (needs `python3` or `jq`)
+
+   ```
+   WazamonoCore/
+     megaavr/                          <- the core
+     tools/avr-gcc/15.2.0-wazamono2/   <- bin/avr-gcc ...
+     tools/avrdude/8.1-wazamono2/      <- bin/avrdude, etc/avrdude.conf
+   ```
+
+   Arduino IDE 2 / arduino-cli registers `hardware\<vendor>\tools\<name>\<version>\` as
+   `{runtime.tools.<name>-<version>.path}`, and `platform.txt` pins exactly those versions, so
+   compiling, sketch upload and **Burn Bootloader** all use this toolchain. `platform.local.txt`
+   is no longer used (it only affected compilation, not uploads; the script deletes it if present).
+
+   > **Note:** a toolchain placed under the sketchbook's `Arduino\tools\` is *not* seen by IDE 2.
+   > It must live under `hardware\WazamonoCore\tools\`.
+   > macOS and Linux (aarch64) have no avr-gcc build yet, so only avrdude is installed there.
+   > Re-run the script after updating the index (`--force` reinstalls).
 
 4. Restart the Arduino IDE.
 

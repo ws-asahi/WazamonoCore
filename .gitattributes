@@ -7,3 +7,6 @@
 
 # 同じ理由でブートローダのビルド補助も LF 固定にする。
 *.bash text eol=lf
+
+# バッチファイルは cmd.exe のために CRLF で展開する（LF のみだとラベルやループが誤動作する）。
+*.bat text eol=crlf

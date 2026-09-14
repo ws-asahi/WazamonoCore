@@ -30,8 +30,14 @@ compiler.warning_flags.default=-Wall
 compiler.warning_flags.more=-Wall
 compiler.warning_flags.all=-Wall -Wextra
 
-# Default "compiler.path" is correct, change only if you want to override the initial value
-compiler.path={runtime.tools.avr-gcc.path}/bin/
+# Pinned to the exact toolchain version listed in docs/package_wazamono_index.json
+# (toolsDependencies). Board Manager installs get it from the index; manual
+# (sketchbook hardware/) installs get it from tools/setup_toolchain.{sh,bat},
+# which places it at hardware/WazamonoCore/tools/avr-gcc/<version>/ - the one
+# location Arduino IDE 2 / arduino-cli registers as
+# {runtime.tools.<name>-<version>.path}. Keep the version here and in the index
+# in sync (the setup scripts warn when they drift).
+compiler.path={runtime.tools.avr-gcc-15.2.0-wazamono2.path}/bin/
 compiler.c.cmd=avr-gcc
 # Optimization flags. The Arduino IDE "Optimize for Debugging" toggle picks
 # .release (default) or .debug. Release keeps -mrelax (linker relaxation =
@@ -71,7 +77,7 @@ compiler.ldflags=
 compiler.libraries.ldflags=
 compiler.size.cmd=avr-size
 
-# Overridden by platform.local.txt if used
+# Extra flags (empty by default)
 compiler.c.extra_flags=
 compiler.c.elf.extra_flags=
 compiler.S.extra_flags=
@@ -181,15 +187,16 @@ tools.wzavrdude.erase.pattern=
 ## avrdude-related paths
 # The tool is deliberately NOT named "avrdude": arduino-cli force-sets
 # tools.<name>.path to {runtime.tools.<name>.path} for every tool name it has
-# installed (platform.txt and platform.local.txt values are ignored), so a
-# tool called "avrdude" can never be pointed anywhere else. With a manual
-# (sketchbook hardware) install that meant the newest avrdude of *any* package
-# (e.g. arduino:avrdude) got used. "wzavrdude" matches no installed tool, so
-# the path below - or the platform.local.txt override written by
-# make_platform_local.bat for manual installs - is honoured as written.
-# Board Manager installs resolve {runtime.tools.avrdude.path} from the
-# package index toolsDependencies (avrdude 8.1-wazamonoN), so no override is needed.
-tools.wzavrdude.path={runtime.tools.avrdude.path}
+# installed (platform.txt values are ignored), so a tool called "avrdude" can
+# never be pointed anywhere else. "wzavrdude" matches no installed tool, so the
+# path below is honoured as written.
+# The path is pinned to the avrdude version listed in
+# docs/package_wazamono_index.json (toolsDependencies). Board Manager installs
+# resolve it from the index; manual (sketchbook hardware/) installs get it from
+# tools/setup_toolchain.{sh,bat}, which places it at
+# hardware/WazamonoCore/tools/avrdude/<version>/. platform.local.txt is no
+# longer used: it only affected compilation, not upload / burn bootloader.
+tools.wzavrdude.path={runtime.tools.avrdude-8.1-wazamono2.path}
 tools.wzavrdude.cmd.path={path}/bin/avrdude
 tools.wzavrdude.config.path={path}/etc/avrdude.conf
 tools.wzavrdude.network_cmd={runtime.tools.arduinoOTA.path}/bin/arduinoOTA
@@ -252,8 +259,10 @@ tools.wzavrdude.upload.network_pattern="{network_cmd}" -address {serial.port} -p
 # This MANUAL install does not auto-resolve the debug toolchain. To enable:
 #   1) obtain an avr-gdb (the C:\avr-gcc build was made with BUILD_GDB=0),
 #   2) pip install pyavrocd  (verify it supports avr64du32 + ships its SVD),
-#   3) in platform.local.txt set:
-#        debug.toolchain.path=C:/path/to/avrocd   (folder holding pyavrocd + avr-gdb)
+#   3) place them as  tools/avrocd-tools/<version>/  under hardware/WazamonoCore
+#      (the same layout tools/setup_toolchain.{sh,bat} uses for avr-gcc / avrdude)
+#      so that {runtime.tools.avrocd-tools.path} resolves to the folder holding
+#      pyavrocd + avr-gdb
 # Debug probe: Atmel-ICE / Curiosity Nano nEDBG / PICkit (jtag3updi-class).
 # ------------------------------------------------------------
 debug.executable={build.path}/{build.project_name}.elf
