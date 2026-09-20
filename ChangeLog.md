@@ -8,7 +8,7 @@ The change history of WazamonoCore. WazamonoCore is the Arduino core for the Waz
 
 ### Analog
 
-- **`vddRead()` / `VDD_VOLTAGE()` added** (`wiring_analog.c`, `Arduino.h`, `Ref_Analog.md`): one 10-bit conversion of the ADC's VDD/10 channel against the internal 2.048 V reference, returned as VDD in units of 10 mV (5.00 V → 500, 3.30 V → 330; 20 mV step, no averaging). 2.048 V rather than 1.024 V keeps the ADC at its normal ~2 MHz clock - DS40002548B Table 35-22 restricts a sub-1.8 V reference to ≤ 500 kHz - so the call is about 55 µs, dominated by the 40 µs reference settling the ADC inserts itself. Every ADC register touched is restored afterwards so `analogRead()` is unaffected; returns 0 if a conversion is already running. Divider ±10 % and reference ±4 % per the datasheet, so it is a supply monitor rather than a calibrated meter.
+- **`vddRead()` / `VDD_VOLTAGE()` added** (`wiring_analog.c`, `Arduino.h`, `Ref_Analog.md`): one 10-bit conversion of the ADC's VDD/10 channel against the internal 2.048 V reference, returned as VDD in units of 10 mV (5.00 V → 500, 3.30 V → 330; 20 mV step, no averaging). 2.048 V rather than 1.024 V keeps the ADC at its normal ~2 MHz clock - DS40002548B Table 35-22 restricts a sub-1.8 V reference to ≤ 500 kHz - so the call is about 55 µs, dominated by the 40 µs reference settling (waited for via ADCBUSY, which in Low Latency mode is the only thing that reports it). Every ADC register touched is restored afterwards so `analogRead()` is unaffected; returns 0 if a conversion is already running. Divider ±10 % and reference ±4 % per the datasheet, so it is a supply monitor rather than a calibrated meter.
 
 ### Manual (sketchbook) installs
 
