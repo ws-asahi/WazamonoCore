@@ -982,13 +982,16 @@ inline __attribute__((always_inline)) void check_valid_resolution(uint8_t res) {
    *
    * Other constraints from DS40002548B:
    *   - Switching from VDD to an internal reference costs a 40 us settling
-   *     (20 us between two internal references, Table 32-4). The core runs
-   *     the ADC with LOWLAT = 1, and in that mode the analog modules are
-   *     reconfigured immediately: the settling starts when CTRLC is written
-   *     and is reported by ADCBUSY in STATUS (32.3.3.7, 32.5.x STATUS). A
-   *     conversion started before ADCBUSY clears runs against an unsettled
-   *     reference and returns full scale, so ADCBUSY is polled before START.
-   *     That settling dominates the call: roughly 55 us total at 24 MHz.
+   *     (20 us between two internal references, Table 32-4). The ADC
+   *     inserts that settling itself at the start of the next conversion,
+   *     timed in units of CLKCTRL.MCLKTIMEBASE, which init_ADC0() sets
+   *     (32.3.1 step 1; with the register at its reset value 0 the settling
+   *     collapses and internal-reference conversions return 0 or 1023 -
+   *     that, not a missing wait, was what the first release of this
+   *     function ran into). The ADCBUSY polls below are the datasheet's
+   *     documented way to check for settling in progress; on the parts
+   *     measured they never have to spin, so they cost nothing. The
+   *     settling dominates the call: roughly 55 us total at 24 MHz.
    *   - With an internal reference SAMPDUR must be >= 4 us * fCLK_ADC - 1.5
    *     = 6.5 at 2 MHz (32.3.3.7). 15, the core default, is forced for the
    *     conversion in case a sketch shortened it.
@@ -1015,7 +1018,7 @@ inline __attribute__((always_inline)) void check_valid_resolution(uint8_t res) {
     ADC0.CTRLE  = 15;                           /* >= 4 us * fCLK_ADC - 1.5 */
     ADC0.CTRLF  = 0;                            /* no FREERUN, no LEFTADJ */
     ADC0.MUXPOS = ADC_MUXPOS_VDDDIV10_gc;
-    while (ADC0.STATUS & ADC_ADCBUSY_bm);       /* reference/input settling (LOWLAT) */
+    while (ADC0.STATUS & ADC_ADCBUSY_bm);       /* settling in progress? (32.3.3.7; normally clear) */
     ADC0.COMMAND = ADC_MODE_SINGLE_10BIT_gc | ADC_START_IMMEDIATE_gc;
     while (!(ADC0.INTFLAGS & ADC_RESRDY_bm));
     uint16_t raw = ADC0.RESULT;                 /* reading RESULT clears RESRDY */
@@ -1026,8 +1029,7 @@ inline __attribute__((always_inline)) void check_valid_resolution(uint8_t res) {
     ADC0.CTRLF  = sCTRLF;
     ADC0.MUXPOS = sMUXPOS;
     ADC0.CTRLA  = sCTRLA;
-    while (ADC0.STATUS & ADC_ADCBUSY_bm);       /* let the restored reference settle too, so a
-                                                   following analogRead() never converts mid-settle */
+    while (ADC0.STATUS & ADC_ADCBUSY_bm);       /* same check after restoring the previous reference */
 
     return (uint16_t)(raw << 1);                /* 20 mV/LSB -> VDD in 10 mV units */
   }
