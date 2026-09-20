@@ -286,8 +286,8 @@ Returns either 8, 10 or 12, the current resolution set for analogRead. no part h
 ### uint8_t getAnalogSampleDuration()
 Returns the number of ADC clocks by which the minimum sample length has been extended.
 
-### (WazamonoCore) uint16_t vddRead() / VDD_VOLTAGE()
-Reads the supply voltage of the MCU through the ADC's internal VDD/10 channel (`ADC_VDDDIV10`, DS40002548B 32.4.12) and returns **VDD in units of 10 mV**: 5.00 V reads as 500, 3.30 V as 330, 5.50 V as 550. `VDD_VOLTAGE()` is a macro alias for the same function.
+### (WazamonoCore) uint16_t vddRead()
+Reads the supply voltage of the MCU through the ADC's internal VDD/10 channel (`ADC_VDDDIV10`, DS40002548B 32.4.12) and returns **VDD in units of 10 mV**: 5.00 V reads as 500, 3.30 V as 330, 5.50 V as 550.
 
 It is one 10-bit conversion against the internal 2.048 V reference. That makes one LSB 2 mV at the ADC input, i.e. 20 mV of VDD, and the result is simply doubled - so the value is always even and the step is 20 mV. No averaging is done; a sketch that wants a smoother figure can average several calls.
 
@@ -312,6 +312,18 @@ Accuracy: the VDD/10 divider is specified to ±10 % and the 2.048 V reference to
 Verified on Tachi (3.3 V and 5 V), Kunai (3.3 V and 5 V) and an AVR64DU32 Curiosity Nano at 5 V: 3.26-3.32 V and 4.96-5.18 V read back, i.e. within the divider tolerance. One Tachi prototype returned 0 on every ADC channel at 5 V while working at 3.3 V; a second unit of the same board did not, so that was a damaged part, not a core or design issue.
 
 If you need the raw channel for your own resolution or accumulation, `analogRead(ADC_VDDDIV10)` and `analogReadEnh(ADC_VDDDIV10, res)` remain available; set `analogReference(INTERNAL2V048)` (or `INTERNAL1V024` together with `analogClockSpeed(500)`) yourself first, and put them back afterwards.
+
+### (WazamonoCore) int16_t tempCRead() / int16_t tempFRead()
+Reads the on-chip temperature sensor and returns the temperature in **tenths of a degree**, Celsius or Fahrenheit: 253 means 25.3 °C, 776 means 77.6 °F. No floating point is involved.
+
+```c++
+int16_t c = tempCRead();
+Serial.print(c / 10); Serial.print('.'); Serial.print(abs(c) % 10); Serial.println(" C");
+```
+
+The procedure is the one in DS40002548B 32.3.3.8: internal 2.048 V reference, `TEMPSENSE` channel, a sample duration of 32 µs (SAMPDUR 64 at the 2 MHz ADC clock the core uses), one 10-bit conversion, then the factory calibration from the signature row - `T[K] = SIGROW.TEMPSENSE1 − raw × SIGROW.TEMPSENSE0 / 1024`, an unsigned gain and a signed offset programmed per device (8.7.1.2). Every ADC register touched is saved and restored, exactly as `vddRead()` does, so `analogRead()` is unaffected. About 80 µs at 24 MHz, dominated by the 40 µs sensor/reference settling the ADC inserts itself. Returns `INT16_MIN` if a conversion is already in progress.
+
+What the number means: it is the temperature of the die, which sits a few degrees above the board when the part is busy, and the sensor's own spread is shown in the Temperature Sensor characteristics graph (36.8). Good enough for "is the enclosure getting hot" or for compensating other measurements; not a thermometer for the room. A sketch that wants a steadier figure can average several calls.
 
 ### uint8_t ADCPowerOptions(options)
 *Planned for when the AVR EA-series is added. For compatibility, a much more limited version will be provided for the Dx-series parts*

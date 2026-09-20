@@ -996,16 +996,21 @@ inline __attribute__((always_inline)) void check_valid_resolution(uint8_t res) {
    *     = 6.5 at 2 MHz (32.3.3.7). 15, the core default, is forced for the
    *     conversion in case a sketch shortened it.
    *
-   * CTRLA, CTRLC, CTRLE, CTRLF and MUXPOS are saved and restored, so
-   * analogRead()/analogReadEnh() see the same reference, sample duration,
-   * left-adjust and accumulation they had before the call. The ADC is
-   * enabled for the duration if it was disabled by ADCPowerOptions().
+   * CTRLA, CTRLC, CTRLE, CTRLF and MUXPOS are saved and restored (see
+   * _wz_adc_internal() below), so analogRead()/analogReadEnh() see the same
+   * reference, sample duration, left-adjust and accumulation they had before
+   * the call. The ADC is enabled for the duration if it was disabled by
+   * ADCPowerOptions().
    *
    * Returns 0 if a conversion is already in progress (e.g. Free-Running
    * mode); 0 cannot otherwise occur while the part is running.
    */
-  uint16_t vddRead(void) {
-    if (ADC0.COMMAND & ADC_START_gm) return 0;  /* conversion in progress */
+  /* One 10-bit single conversion of an internal channel against an internal
+   * reference, with CTRLA/C/E/F and MUXPOS saved and restored around it.
+   * Shared by vddRead() and tempCRead()/tempFRead(). Returns 0xFFFF if a
+   * conversion is already in progress. */
+  static uint16_t _wz_adc_internal(uint8_t mux, uint8_t ref, uint8_t sampdur) {
+    if (ADC0.COMMAND & ADC_START_gm) return 0xFFFF; /* conversion in progress */
 
     uint8_t sCTRLA  = ADC0.CTRLA;
     uint8_t sCTRLC  = ADC0.CTRLC;
@@ -1014,10 +1019,10 @@ inline __attribute__((always_inline)) void check_valid_resolution(uint8_t res) {
     uint8_t sMUXPOS = ADC0.MUXPOS;
 
     ADC0.CTRLA  = sCTRLA | ADC_ENABLE_bm;
-    ADC0.CTRLC  = ADC_REFSEL_2V048_gc;          /* >= 1.8 V: 2 MHz CLK_ADC allowed */
-    ADC0.CTRLE  = 15;                           /* >= 4 us * fCLK_ADC - 1.5 */
+    ADC0.CTRLC  = ref;
+    ADC0.CTRLE  = sampdur;
     ADC0.CTRLF  = 0;                            /* no FREERUN, no LEFTADJ */
-    ADC0.MUXPOS = ADC_MUXPOS_VDDDIV10_gc;
+    ADC0.MUXPOS = mux;
     while (ADC0.STATUS & ADC_ADCBUSY_bm);       /* settling in progress? (32.3.3.7; normally clear) */
     ADC0.COMMAND = ADC_MODE_SINGLE_10BIT_gc | ADC_START_IMMEDIATE_gc;
     while (!(ADC0.INTFLAGS & ADC_RESRDY_bm));
@@ -1030,8 +1035,43 @@ inline __attribute__((always_inline)) void check_valid_resolution(uint8_t res) {
     ADC0.MUXPOS = sMUXPOS;
     ADC0.CTRLA  = sCTRLA;
     while (ADC0.STATUS & ADC_ADCBUSY_bm);       /* same check after restoring the previous reference */
+    return raw;
+  }
 
+  uint16_t vddRead(void) {
+    uint16_t raw = _wz_adc_internal(ADC_MUXPOS_VDDDIV10_gc, ADC_REFSEL_2V048_gc, 15);
+    if (raw == 0xFFFF) return 0;
     return (uint16_t)(raw << 1);                /* 20 mV/LSB -> VDD in 10 mV units */
+  }
+
+  /* Wazamono: tempCRead() / tempFRead() - on-chip temperature sensor.
+   *
+   * DS40002548B 32.3.3.8: internal 2.048 V reference, TEMPSENSE channel,
+   * SAMPDUR >= 32 us * fCLK_ADC (64 at the 2 MHz the core runs), 10-bit
+   * single conversion, then
+   *     T[K] = SIGROW.TEMPSENSE1 - raw * SIGROW.TEMPSENSE0 / 1024
+   * with TEMPSENSE0 an unsigned gain and TEMPSENSE1 a signed offset, both
+   * factory-programmed per device (8.7.1.2). The 40 us settling of the
+   * sensor and reference (Table 32-4) is inserted by the ADC itself, so a
+   * call is roughly 80 us at 24 MHz.
+   *
+   * Both return tenths of a degree so no float is needed: 253 = 25.3 C,
+   * 776 = 77.6 F. Values are typically a few degrees from ambient and read
+   * the die, not the board; see the Temperature Sensor characteristics graph
+   * (36.8) for the spread. Returns INT16_MIN if a conversion is already in
+   * progress. */
+  int16_t tempCRead(void) {
+    uint16_t raw = _wz_adc_internal(ADC_MUXPOS_TEMPSENSE_gc, ADC_REFSEL_2V048_gc, 64);
+    if (raw == 0xFFFF) return INT16_MIN;
+    int32_t t10 = (int32_t)(int16_t)SIGROW.TEMPSENSE1 * 10L
+                - (((int32_t)raw * (uint16_t)SIGROW.TEMPSENSE0 * 10L + 512L) >> 10);   /* 0.1 K */
+    return (int16_t)(t10 - 2731);               /* 273.15 K -> 0.1 C */
+  }
+
+  int16_t tempFRead(void) {
+    int16_t c10 = tempCRead();
+    if (c10 == INT16_MIN) return INT16_MIN;
+    return (int16_t)(((int32_t)c10 * 9L) / 5L + 320L);
   }
 
 #else /* SUPER IMPORTANT PREPROCESSOR DIRECTIVE */
