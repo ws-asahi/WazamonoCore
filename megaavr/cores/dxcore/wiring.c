@@ -1919,6 +1919,16 @@ void nudge_millis(__attribute__((unused)) uint16_t nudgesize) {
       pADC->CTRLA = ADC_ENABLE_bm | ADC_LOWLAT_bm;
       pADC->PGACTRL = ADC_PGABIASSEL_75PCT_gc; // Default for PGA settings.
     #elif defined(ADC_LOWLAT_bm) /* what version number comes between 1.5 and 2.0, but is after 2.1? */
+      /* Wazamono: DS40002548B 32.3.1 step 1. The AVR DU ADC times its
+       * internal delays - start-up, the 40 us settling of an internal
+       * reference, the temperature sensor - in units of CLKCTRL.MCLKTIMEBASE,
+       * which resets to 0 and which the Dx-family init_clock() shared with
+       * the DA/DB/DD never writes (those parts have no such register). Left
+       * at 0 every such delay collapses to nothing: the reference is never
+       * settled, ADCBUSY never reports it, and internal-reference conversions
+       * come back 0 or 1023. TIMEBASE is the number of CLK_PER cycles that
+       * make up at least 1 us (12.11), i.e. 24 at 24 MHz; 5 bits, max 31. */
+      CLKCTRL.MCLKTIMEBASE = (uint8_t)((F_CPU + 999999UL) / 1000000UL);
       #if F_CPU      > 32000000
         pADC->CTRLB  = ADC_PRESC_DIV20_gc;  // 36 MHz /20  = 1.80 MHz
       #elif F_CPU   >  28000000             // 33 MHz /20  = 1.67 MHz

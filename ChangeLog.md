@@ -8,6 +8,8 @@ The change history of WazamonoCore. WazamonoCore is the Arduino core for the Waz
 
 ### Analog
 
+- **`init_ADC0()` now writes `CLKCTRL.MCLKTIMEBASE` on the AVR DU** (`wiring.c`). The DU ADC times its internal delays (start-up, the 40 µs internal-reference settling, temperature sensor) in units of this register, which DS40002548B 32.3.1 lists as ADC initialisation step 1 but which the Dx-family `init_clock()` never set (DA/DB/DD have no such register). It was left at its reset value 0, so no internal-reference settling ever happened and conversions against `INTERNAL1V024`…`INTERNAL4V096` returned 0 or 1023 - found through `vddRead()` on a Tachi. Value is the number of CLK_PER cycles ≥ 1 µs, 24 at 24 MHz.
+
 - **`vddRead()` / `VDD_VOLTAGE()` added** (`wiring_analog.c`, `Arduino.h`, `Ref_Analog.md`): one 10-bit conversion of the ADC's VDD/10 channel against the internal 2.048 V reference, returned as VDD in units of 10 mV (5.00 V → 500, 3.30 V → 330; 20 mV step, no averaging). 2.048 V rather than 1.024 V keeps the ADC at its normal ~2 MHz clock - DS40002548B Table 35-22 restricts a sub-1.8 V reference to ≤ 500 kHz - so the call is about 55 µs, dominated by the 40 µs reference settling (waited for via ADCBUSY, which in Low Latency mode is the only thing that reports it). Every ADC register touched is restored afterwards so `analogRead()` is unaffected; returns 0 if a conversion is already running. Divider ±10 % and reference ±4 % per the datasheet, so it is a supply monitor rather than a calibrated meter.
 
 ### Manual (sketchbook) installs
