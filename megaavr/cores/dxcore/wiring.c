@@ -1929,24 +1929,28 @@ void nudge_millis(__attribute__((unused)) uint16_t nudgesize) {
        * come back 0 or 1023. TIMEBASE is the number of CLK_PER cycles that
        * make up at least 1 us (12.11), i.e. 24 at 24 MHz; 5 bits, max 31. */
       CLKCTRL.MCLKTIMEBASE = (uint8_t)((F_CPU + 999999UL) / 1000000UL);
-      #if F_CPU      > 32000000
-        pADC->CTRLB  = ADC_PRESC_DIV20_gc;  // 36 MHz /20  = 1.80 MHz
-      #elif F_CPU   >  28000000             // 33 MHz /20  = 1.67 MHz
-        pADC->CTRLB  = ADC_PRESC_DIV16_gc;  // 32 MHz /16  = 2.00 MHz
-      #elif F_CPU   >  24000000             // 28 MHz /16  = 1.75 MHz
-        pADC->CTRLB  = ADC_PRESC_DIV14_gc;  // 25 MHz /14  = 1.78 MHz
+      /* Wazamono: target CLK_ADC = 2 MHz, the DU maximum (DS40002548B Table
+       * 35-23, tCLK_ADC >= 0.5 us). Smallest divisor that stays at or below
+       * it for each F_CPU; the earlier chain gave 16 MHz -> DIV4 (4 MHz) and
+       * 12 MHz -> DIV4 (3 MHz), both out of spec. */
+      #if F_CPU      > 28000000
+        pADC->CTRLB  = ADC_PRESC_DIV16_gc;  // 32 MHz /16 = 2.00 MHz
+      #elif F_CPU   >  24000000
+        pADC->CTRLB  = ADC_PRESC_DIV14_gc;  // 28 MHz /14 = 2.00 MHz
       #elif F_CPU   >  20000000
-        pADC->CTRLB  = ADC_PRESC_DIV12_gc;  // 24 MHz /12  = 2.00 MHz
-      #elif F_CPU   > 16000000              // 20 MHz / 10  = 2.00 MHz
-        pADC->CTRLB  = ADC_PRESC_DIV10_gc;  // 16 MHz / 8  = 2.00 MHz
-      #elif F_CPU   > 12000000
-        pADC->CTRLB  = ADC_PRESC_DIV4_gc;   // 12 MHz / 6 = 2.00 MHz
-      #elif F_CPU   >  6000000              // 10 MHz / 6  = 1.67 MHz
+        pADC->CTRLB  = ADC_PRESC_DIV12_gc;  // 24 MHz /12 = 2.00 MHz
+      #elif F_CPU   >  16000000
+        pADC->CTRLB  = ADC_PRESC_DIV10_gc;  // 20 MHz /10 = 2.00 MHz
+      #elif F_CPU   >  12000000
+        pADC->CTRLB  = ADC_PRESC_DIV8_gc;   // 16 MHz / 8 = 2.00 MHz
+      #elif F_CPU   >   8000000
+        pADC->CTRLB  = ADC_PRESC_DIV6_gc;   // 12 MHz / 6 = 2.00 MHz
+      #elif F_CPU   >   4000000
         pADC->CTRLB  = ADC_PRESC_DIV4_gc;   //  8 MHz / 4 = 2.00 MHz
-      #else                                 //  5 MHz / 4 = 1.25 MHz
-        pADC->CTRLB  = ADC_PRESC_DIV2_gc;   //  4 MHz / 2 = 2.00 MHz
-      #endif                                //  1 MHz / 2 =  500 kHz
-      pADC->CTRLE = 15; // 15.5 without PGA, 16 with PGA, corresponding to 7.75 or 8 us.
+      #else
+        pADC->CTRLB  = ADC_PRESC_DIV2_gc;   //  4 MHz / 2 = 2.00 MHz, 1 MHz / 2 = 500 kHz
+      #endif
+      pADC->CTRLE = 15; // 15.5 CLK_ADC cycles = 7.75 us at 2 MHz.
       pADC->CTRLA = ADC_ENABLE_bm | ADC_LOWLAT_bm;
     #else /* AVR DA/DB/DD */
       // Target is again 2 MHz, the maximum the Dx is rated for.
