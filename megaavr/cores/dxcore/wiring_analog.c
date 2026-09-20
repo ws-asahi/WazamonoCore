@@ -1049,9 +1049,12 @@ inline __attribute__((always_inline)) void check_valid_resolution(uint8_t res) {
    * DS40002548B 32.3.3.8: internal 2.048 V reference, TEMPSENSE channel,
    * SAMPDUR >= 32 us * fCLK_ADC (64 at the 2 MHz the core runs), 10-bit
    * single conversion, then
-   *     T[K] = SIGROW.TEMPSENSE1 - raw * SIGROW.TEMPSENSE0 / 1024
+   *     T[K] = (SIGROW.TEMPSENSE1 - raw) * SIGROW.TEMPSENSE0 / 1024
    * with TEMPSENSE0 an unsigned gain and TEMPSENSE1 a signed offset, both
-   * factory-programmed per device (8.7.1.2). The 40 us settling of the
+   * factory-programmed per device (8.7.1.2). The datasheet typesets this
+   * as a fraction and a flat text rendering drops the parentheses; read
+   * as "offset - raw * gain / 1024" it gives -2 C on a part sitting at
+   * 27 C (gain 1063, offset 849, raw 557), read as above it gives 30 C. The 40 us settling of the
    * sensor and reference (Table 32-4) is inserted by the ADC itself, so a
    * call is roughly 80 us at 24 MHz.
    *
@@ -1063,8 +1066,8 @@ inline __attribute__((always_inline)) void check_valid_resolution(uint8_t res) {
   int16_t tempCRead(void) {
     uint16_t raw = _wz_adc_internal(ADC_MUXPOS_TEMPSENSE_gc, ADC_REFSEL_2V048_gc, 64);
     if (raw == 0xFFFF) return INT16_MIN;
-    int32_t t10 = (int32_t)(int16_t)SIGROW.TEMPSENSE1 * 10L
-                - (((int32_t)raw * (uint16_t)SIGROW.TEMPSENSE0 * 10L + 512L) >> 10);   /* 0.1 K */
+    int32_t t10 = ((int32_t)((int16_t)SIGROW.TEMPSENSE1 - (int16_t)raw)
+                   * (uint16_t)SIGROW.TEMPSENSE0 * 10L + 512L) >> 10;                 /* 0.1 K */
     return (int16_t)(t10 - 2731);               /* 273.15 K -> 0.1 C */
   }
 
