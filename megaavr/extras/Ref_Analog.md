@@ -323,7 +323,16 @@ Serial.print(c / 10); Serial.print('.'); Serial.print(abs(c) % 10); Serial.print
 
 The procedure is the one in DS40002548B 32.3.3.8: internal 2.048 V reference, `TEMPSENSE` channel, a sample duration of 32 µs (SAMPDUR 64 at the 2 MHz ADC clock the core uses), one 10-bit conversion, then the factory calibration from the signature row - `T[K] = (SIGROW.TEMPSENSE1 − raw) × SIGROW.TEMPSENSE0 / 1024`, a signed offset and an unsigned gain programmed per device (8.7.1.2). The datasheet typesets the formula as a fraction; the parentheses matter, and the version without them is about 30 K low. Every ADC register touched is saved and restored, exactly as `vddRead()` does, so `analogRead()` is unaffected. About 80 µs at 24 MHz, dominated by the 40 µs sensor/reference settling the ADC inserts itself. Returns `INT16_MIN` if a conversion is already in progress.
 
-What the number means: it is the temperature of the die, which sits a few degrees above the board when the part is busy, and the sensor's own spread is shown in the Temperature Sensor characteristics graph (36.8). On a Tachi at rest it read 30.0 °C while a non-contact thermometer showed 27.4 °C on the package. Good enough for "is the enclosure getting hot" or for compensating other measurements; not a thermometer for the room. A sketch that wants a steadier figure can average several calls.
+What the number means: it is the temperature of the die, which sits a few degrees above the board when the part is busy, and the absolute accuracy is limited. Measured in a 26 °C room with the boards idling on USB:
+
+| Board | VDD | Reads | Notes |
+|---|---|---|---|
+| Tachi (AVR64DU32) | 3.3 V | 30.0 °C | package surface 27.4 °C by IR thermometer |
+| Kunai (AVR32DU20) | 3.3 V | 25.9 °C | |
+| Curiosity Nano (AVR64DU32) | 5 V | 24.8 °C | |
+| Kunai (AVR32DU20), another unit | 5 V | 16.0 °C | |
+
+Two things drive that spread. The sensor's own characterisation band is wide (Figure 36-105). And the reading is unusually sensitive to the 2.048 V reference: with a gain of roughly 1.0-1.3 K per LSB and a raw result around 560 LSB, a 1 % shift in the reference moves the result by 6-7 K, and the reference does shift with VDD and between parts (Figures 36-83/36-84, a ±3 % scale). The factory calibration is taken under the datasheet's typical conditions, VDD = 3.0 V, so boards run at 5 V tend to read low. Treat the raw reading as good to roughly ±10 °C absolute; its *changes* - a rise under load, a hot enclosure - are far more trustworthy than its level. A sketch that needs the level should take one reading at a known temperature and store the difference in USERROW or EEPROM as an offset, which the datasheet itself suggests (32.3.3.8). The core deliberately applies no such correction, since it is per unit and per supply voltage. Good enough for "is the enclosure getting hot" or for compensating other measurements; not a thermometer for the room. A sketch that wants a steadier figure can average several calls.
 
 ### uint8_t ADCPowerOptions(options)
 *Planned for when the AVR EA-series is added. For compatibility, a much more limited version will be provided for the Dx-series parts*
