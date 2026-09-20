@@ -286,6 +286,31 @@ Returns either 8, 10 or 12, the current resolution set for analogRead. no part h
 ### uint8_t getAnalogSampleDuration()
 Returns the number of ADC clocks by which the minimum sample length has been extended.
 
+### (WazamonoCore) uint16_t vddRead() / VDD_VOLTAGE()
+Reads the supply voltage of the MCU through the ADC's internal VDD/10 channel (`ADC_VDDDIV10`, DS40002548B 32.4.12) and returns **VDD in units of 10 mV**: 5.00 V reads as 500, 3.30 V as 330, 5.50 V as 550. `VDD_VOLTAGE()` is a macro alias for the same function.
+
+It is one 10-bit conversion against the internal 2.048 V reference. That makes one LSB 2 mV at the ADC input, i.e. 20 mV of VDD, and the result is simply doubled - so the value is always even and the step is 20 mV. No averaging is done; a sketch that wants a smoother figure can average several calls.
+
+```c++
+uint16_t vdd = vddRead();          // 500 on a 5 V board, 330 on a 3.3 V board
+Serial.print(vdd / 100); Serial.print('.');
+if (vdd % 100 < 10) Serial.print('0');
+Serial.print(vdd % 100); Serial.println(" V");
+
+bool is5V = vdd > 420;                    // 5 V vs 3.3 V board detection
+```
+
+What the call does, and why:
+* 2.048 V is used rather than 1.024 V because DS40002548B Table 35-22 (V<sub>ADCREF</sub>) only permits an ADC clock above 500 kHz with a reference of 1.8 V or more. With 2.048 V the ADC keeps the ~2 MHz clock the core configured, the prescaler is left untouched, and the call stays short. The finer 10 mV step 1.024 V would give is meaningless next to the ±10 % the divider is specified to.
+* Switching from the VDD reference to an internal one costs a 40 µs initialisation (Table 32-4; 20 µs between two internal references). The ADC sequences that itself at the start of the conversion, so no software delay is used, but it dominates the call: about 55 µs in total at 24 MHz, blocking.
+* The sample duration is forced to 15 for the conversion, because an internal reference needs SAMPDUR ≥ 4 µs × f<sub>CLK_ADC</sub> − 1.5 = 6.5 at 2 MHz (32.3.3.7) and a sketch may have shortened it with `analogSampleDuration()`.
+* Every ADC register the call touches (CTRLA, CTRLC, CTRLE, CTRLF, MUXPOS) is saved and restored, so the reference, sample duration, left-adjust and accumulation that `analogRead()` / `analogReadEnh()` had before the call are exactly what they see afterwards. If the ADC had been disabled with `ADCPowerOptions(ADC_DISABLE)` it is enabled only for the duration of the call.
+* Returns **0** if a conversion is already in progress (Free-Running mode, or a call from inside an ADC ISR). 0 cannot occur otherwise while the part is running.
+
+Accuracy: the VDD/10 divider is specified to ±10 % and the 2.048 V reference to ±4 % (DS40002548B Tables 35-22 and 35-17). Treat the result as a supply *monitor* - is the board on 5 V or 3.3 V, is a battery getting low, did the rail sag - rather than a calibrated meter. Where an absolute figure matters, measure the board once against a known supply and keep a correction factor in USERROW or EEPROM. The DU has no VDDIO2 pin, so `ADC_VDDIO2DIV10` listed in the Dx tables above does not apply to Wazamono boards.
+
+If you need the raw channel for your own resolution or accumulation, `analogRead(ADC_VDDDIV10)` and `analogReadEnh(ADC_VDDDIV10, res)` remain available; set `analogReference(INTERNAL2V048)` (or `INTERNAL1V024` together with `analogClockSpeed(500)`) yourself first, and put them back afterwards.
+
 ### uint8_t ADCPowerOptions(options)
 *Planned for when the AVR EA-series is added. For compatibility, a much more limited version will be provided for the Dx-series parts*
 The PGA requires power when turned on. It is enabled by any call to `analogReadEnh()` or `analogReadDiff()` that specifies valid gain > 0; if it is not already on, this will slow down the reading. By default we turn it on so people can just off afterwards. There is also a "low latency" mode that, when enabled, keeps the ADC reference and related hardware running to prevent the delay (on order of tens of microseconds) before the next analog reading is taken. We use that by default, but it can be turned off with this function.

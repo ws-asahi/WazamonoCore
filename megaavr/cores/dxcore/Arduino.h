@@ -1049,6 +1049,18 @@ uint8_t      getAnalogReference();
 uint8_t getAnalogSampleDuration();
   void    ADCPowerOptions(uint8_t options);
 
+#if defined(__AVR_DU__)
+/* Wazamono: supply voltage read-back. One 10-bit conversion of the ADC's
+ * VDD/10 channel against the internal 2.048 V reference (20 mV/LSB, doubled),
+ * so the result is VDD in units of 10 mV with no other scaling: 5.00 V -> 500,
+ * 3.30 V -> 330. No averaging; ~55 us at 24 MHz; ADC settings are restored.
+ * Returns 0 if a conversion is already in progress. The VDD/10 divider is
+ * +/-10 % and the reference +/-4 % (DS40002548B Tables 35-22 / 35-17): a
+ * monitor, not a calibrated meter. See extras/Ref_Analog.md. */
+uint16_t vddRead(void);
+#define VDD_VOLTAGE() vddRead()
+#endif
+
 
 
 

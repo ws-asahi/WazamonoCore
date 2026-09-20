@@ -963,10 +963,68 @@ inline __attribute__((always_inline)) void check_valid_resolution(uint8_t res) {
     return pgm_read_word_near(&adc_prescale_to_clkadc[ADC0.CTRLB & 0x0F]);
   }
 
+  /* Wazamono: vddRead() - supply voltage read-back through the ADC.
+   *
+   * The AVR DU can route VDD/10 into the ADC (MUXPOS = VDDDIV10, DS40002548B
+   * 32.4.12). It is converted here against the internal 2.048 V reference in
+   * a single 10-bit conversion, so one LSB is 2 mV at the ADC input, i.e.
+   * 20 mV of VDD, and the result is doubled to report VDD in units of 10 mV:
+   * 5.00 V -> 500, 3.30 V -> 330, 5.50 V -> 550 (always an even number).
+   *
+   * Why 2.048 V rather than 1.024 V: DS40002548B Table 35-22 (VADCREF) only
+   * allows an ADC clock above 500 kHz when the reference is >= 1.8 V. With
+   * 2.048 V the ADC keeps the ~2 MHz clock init_ADC0() configured, so the
+   * prescaler is left alone and the call stays short; the price is a 20 mV
+   * step instead of 10 mV, which is well inside the +/-10 % divider and
+   * +/-4 % reference tolerances (Tables 35-22 / 35-17) this channel has
+   * anyway. No averaging is done - a sketch that wants a smoother value
+   * can average several calls.
+   *
+   * Other constraints from DS40002548B:
+   *   - Switching from VDD to an internal reference costs a 40 us
+   *     initialisation (20 us between two internal references), which the
+   *     ADC sequences itself at the start of the next conversion (32.3.3.7 /
+   *     Table 32-4); no software delay is needed. That settling dominates
+   *     the call: roughly 55 us total at 24 MHz.
+   *   - With an internal reference SAMPDUR must be >= 4 us * fCLK_ADC - 1.5
+   *     = 6.5 at 2 MHz (32.3.3.7). 15, the core default, is forced for the
+   *     conversion in case a sketch shortened it.
+   *
+   * CTRLA, CTRLC, CTRLE, CTRLF and MUXPOS are saved and restored, so
+   * analogRead()/analogReadEnh() see the same reference, sample duration,
+   * left-adjust and accumulation they had before the call. The ADC is
+   * enabled for the duration if it was disabled by ADCPowerOptions().
+   *
+   * Returns 0 if a conversion is already in progress (e.g. Free-Running
+   * mode); 0 cannot otherwise occur while the part is running.
+   */
+  uint16_t vddRead(void) {
+    if (ADC0.COMMAND & ADC_START_gm) return 0;  /* conversion in progress */
 
+    uint8_t sCTRLA  = ADC0.CTRLA;
+    uint8_t sCTRLC  = ADC0.CTRLC;
+    uint8_t sCTRLE  = ADC0.CTRLE;
+    uint8_t sCTRLF  = ADC0.CTRLF;
+    uint8_t sMUXPOS = ADC0.MUXPOS;
 
+    ADC0.CTRLA  = sCTRLA | ADC_ENABLE_bm;
+    ADC0.CTRLC  = ADC_REFSEL_2V048_gc;          /* >= 1.8 V: 2 MHz CLK_ADC allowed */
+    ADC0.CTRLE  = 15;                           /* >= 4 us * fCLK_ADC - 1.5 */
+    ADC0.CTRLF  = 0;                            /* no FREERUN, no LEFTADJ */
+    ADC0.MUXPOS = ADC_MUXPOS_VDDDIV10_gc;
+    ADC0.COMMAND = ADC_MODE_SINGLE_10BIT_gc | ADC_START_IMMEDIATE_gc;
+    while (!(ADC0.INTFLAGS & ADC_RESRDY_bm));
+    uint16_t raw = ADC0.RESULT;                 /* reading RESULT clears RESRDY */
 
+    ADC0.CTRLA  = sCTRLA & ~ADC_ENABLE_bm;      /* quiesce before restoring the rest */
+    ADC0.CTRLC  = sCTRLC;
+    ADC0.CTRLE  = sCTRLE;
+    ADC0.CTRLF  = sCTRLF;
+    ADC0.MUXPOS = sMUXPOS;
+    ADC0.CTRLA  = sCTRLA;
 
+    return (uint16_t)(raw << 1);                /* 20 mV/LSB -> VDD in 10 mV units */
+  }
 
 #else /* SUPER IMPORTANT PREPROCESSOR DIRECTIVE */
     // Otherwise it's a DX that isn't a DU.
