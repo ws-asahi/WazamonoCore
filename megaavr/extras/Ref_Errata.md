@@ -173,6 +173,36 @@ Despite the datasheet saying otherwise *(and saying so very explicitly)*, the lo
 
 My only thought here is "If SPM instruction requires word aligned access, why not have the user supply the address rightshifted a bit (word addressed). Make ELPM assume RAMPZ = 1, and then 128k parts don't need a rampz, and we don't even know if there will be 256k parts. ". I would have no objection to losing ST/STS writes to the flash if it meant that I could take RAMPZ out of the equation while writing to the flash.
 
+### (DU) OSCHFTUNE is a 7-bit field, and its step is far smaller than documented (datasheet should be corrected)
+*Found while validating the Wazamono boards (WazamonoCore). Not yet confirmed by Microchip.*
+
+Affects: AVR64DU32 and AVR32DU20, reproduced on three boards (one AVR64DU32, two AVR32DU20). Same text in DS40002548B (AVR64DU28/32) and DS40002576B (AVR32/16DU14/20/28/32), section 12.13 and Table 35-11. Silicon revision (SYSCFG.REVID) not yet recorded.
+
+The datasheet says TUNE is a 6-bit two's-complement value (-32..+31) with bit 5 mirrored into bit 6, so that writing bit 6 has no effect, and Table 35-11 gives a typical step (%CAL) of 0.4 %. Measured instead:
+
+* **Bit 6 is the sign bit and is not ignored.** Written as the datasheet implies, -1 is 0x3F; the part takes that as +63 and the clock rises by about 5.7 % (over the 24 MHz maximum). Writing -1 as 0x7F lowers the clock by one step as intended.
+* **The mirroring is one bit higher than documented**: bit 6 is mirrored into bit 7 on read-back (0x78..0x7F read back as 0xF8..0xFF).
+* **One step is about 0.07 % upward and about 0.04 % downward** (after the first negative step), not 0.4 %. Near the top of the positive range (+56..+63) steps grow to about 0.13 %, so the characteristic is not linear.
+
+| Value written | Byte | Change from TUNE=0 (ppm), range over three boards |
+|---|---|---|
+| -8 | 0x78 (7-bit) | -3292 .. -3458 |
+| -1 | 0x7F (7-bit) | -667 .. -833 |
+| +1 | 0x01 | +667 .. +708 |
+| +8 | 0x08 | +5500 .. +5917 |
+| -1 as 6-bit | 0x3F | +56542 .. +59875 |
+
+Measured with TCB1 in frequency-measurement mode counting CLK_PER over the period of an external 1 kHz reference, the reference itself checked against USB SOF (the host's crystal) in the same session, 64 periods per point, auto-tune stopped.
+
+One consequence beyond manual tuning: the Incremental auto-tune algorithm moves at most five steps per USB bus reset, which at the documented 0.4 % would cover the ±2 % OSCHF accuracy limit, but at the measured step covers only about 0.35 % upward and 0.2 % downward. In practice this has not mattered on the boards measured, because auto-tune also keeps tracking while USB is connected (see the Clock section of the Wazamono board documents).
+
+**Workaround**
+The core never writes OSCHFTUNE; this only concerns sketches that tune by hand.
+* Stop auto-tune first (the register is locked while it runs; the latest auto-tuned value is copied in when it is stopped).
+* Write a 7-bit two's-complement value: `CLKCTRL.OSCHFTUNE = v & 0x7F;`
+* Read it back as 7-bit signed, ignoring bit 7: `int8_t v = (r & 0x40) ? (int8_t)(r | 0x80) : (int8_t)(r & 0x7F);`
+* Size corrections by measurement, not by the 0.4 % figure.
+
 ### UPDI programming issue with 16-bit STS after 24-bit STptr (Datasheet should be clarrified)
 On parts which use 24-bit addressing, 16-bit addressing should not be used for STS operations. The results are profoundly baffling - the long and short of it is: See the table in the UPDI chapter, titled `Figure xx-10: STS Instruction Operation`? Cross out the top two lines. If STptr has been used with a 24-bit pointer (which you normally do to write the flash), if a subsequent STS doesn't use the 24-bit address, it will use the high byte from ptr! This behavior is apparently intended and expected, but that isn't communicated to the reader of the datasheet.
 
