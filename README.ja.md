@@ -25,9 +25,9 @@ WazamonoCore は、これらのボードを Arduino IDE で開発するための
 
 | ボード | MCU | フォームファクタ | 状態 |
 |--------|-----|------------------|------|
-| [**Wazamono 太刀(Tachi)**](megaavr/extras/WazamonoTachi.ja.md) | AVR64DU32 | Pro Micro 互換 / USB-C | 🔧 試作中 |
+| [**Wazamono 太刀(Tachi)**](megaavr/extras/WazamonoTachi.ja.md) | AVR64DU32 | Pro Micro 互換 / USB-C | 🔧 PID / VID 申請中 |
 | [**Wazamono 剣(Tsurugi)**](megaavr/extras/WazamonoTsurugi.ja.md) | AVR64DU32 | Uno R3 互換 / USB-C | 🔧 試作中  |
-| [**Wazamono 苦無(Kunai)**](megaavr/extras/WazamonoKunai.ja.md) | AVR32DU20 | XIAO 互換 / USB-C | 🔧 試作中  |
+| [**Wazamono 苦無(Kunai)**](megaavr/extras/WazamonoKunai.ja.md) | AVR32DU20 | XIAO 互換 / USB-C | 🔧 PID / VID 申請中 |
 
 >  
 > このコアには **Tachi**、**Tsurugi**、**Kunai**の variant が含まれています。  

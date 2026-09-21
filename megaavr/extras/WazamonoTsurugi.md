@@ -316,19 +316,26 @@ The layout therefore differs considerably from the Leonardo.
 
 ### Measured auto-tune behaviour
 
-The AVR DU's OSCHF can correct its own frequency against USB SOF (auto-tune), and the core enables it when USB is initialised (Incremental algorithm). No other modern AVR has this. Below is what was measured on one Tachi and two Kunai (all AVR DU) against an external reference.
+The AVR DU's OSCHF can correct its own frequency against USB SOF (auto-tune),  
+and the core enables it when USB is initialised (Incremental algorithm).  
+No other modern AVR has this. Below is what was measured on the Tachi and Kunai against an external reference.  
 
 | State | Frequency accuracy (measured) |
 |-------|-------------------------------|
 | USB connected | **Within ±0.12%**, maintained as temperature changes |
 | USB connected, then disconnected | Holds the correction in effect at disconnect; drifts with temperature afterwards |
-| Started without ever connecting USB | Factory calibration only. −0.44 to +0.08% across the four boards measured (datasheet guarantee: ±2%) |
+| USB disconnected | Factory calibration only. −0.44 to +0.08% across the some boards measured (datasheet guarantee: ±2%) |
 
-- **It keeps tracking during operation.** Correction is not limited to enumeration; it stays active while USB is connected. Whenever the frequency leaves a dead band of roughly ±0.1%, it is stepped back one step at a time. Across temperature swings of up to about 15 °C as read by the die sensor (heating, then cooling with an ice pack), all three boards stayed within ±0.12% (USB full speed allows ±0.25%).
-- **Correction happens in steps.** One step is about 0.07% (up) / about 0.04% (down), so while USB is connected, frequency steps of this size can occur at any time. That is far too small to affect `millis()` or UART, but take it into account where short-term frequency stability itself matters.
-- **Without USB there is no tracking.** The internal oscillator runs faster as it warms, by about +0.015 to +0.035% per °C (from the change in the sensor reading). That is ample for UART (tolerance roughly ±2%), but not for applications that need absolute frequency accuracy.
-- Temperatures are the **relative change** in the die sensor reading (`tempCRead()`), because its absolute error is around ±10 °C (see the `tempCRead()` entry in [Ref_Analog.md](Ref_Analog.md)).
-- If a sketch writes `CLKCTRL.OSCHFTUNE` by hand, note that the hardware does not behave as the datasheet describes (see "(DU) OSCHFTUNE" in [Ref_Errata.md](Ref_Errata.md)). The core never writes this register.
+- **It keeps tracking during operation.** Correction is not limited to enumeration;  
+it stays active while USB is connected. Whenever the frequency leaves a dead band of roughly ±0.1%,  
+it is stepped back one step at a time.  
+Across temperature swings of up to about 15 °C as read by the die sensor (heating, then cooling with an ice pack),  
+all three boards stayed within ±0.12% (USB full speed allows ±0.25%).  
+- **Correction happens in steps.** One step is about 0.07% (up) / about 0.04% (down), so while USB is connected,  
+frequency steps of this size can occur at any time.  
+That is far too small to affect `millis()` or UART, but take it into account where short-term frequency stability itself matters.  
+- **Without USB there is no tracking.** The internal oscillator runs faster as it warms, by about +0.015 to +0.035% per °C (from the change in the sensor reading).  
+That is ample for UART (tolerance roughly ±2%), but not for applications that need absolute frequency accuracy.  
 
 ---
 

@@ -25,9 +25,9 @@ It is based on [DxCore](https://github.com/SpenceKonde/DxCore), **restructured t
 
 | Board | MCU | Form factor | Status |
 |-------|-----|-------------|--------|
-| [**Wazamono Tachi (太刀)**](megaavr/extras/WazamonoTachi.md) | AVR64DU32 | Pro Micro compatible / USB-C | 🔧 Prototype |
+| [**Wazamono Tachi (太刀)**](megaavr/extras/WazamonoTachi.md) | AVR64DU32 | Pro Micro compatible / USB-C | 🔧 Req. PID / VID |
 | [**Wazamono Tsurugi (剣)**](megaavr/extras/WazamonoTsurugi.md) | AVR64DU32 | Uno R3 compatible / USB-C | 🔧 Prototype |
-| [**Wazamono Kunai (苦無)**](megaavr/extras/WazamonoKunai.md) | AVR32DU20 | XIAO compatible / USB-C | 🔧 Prototype |
+| [**Wazamono Kunai (苦無)**](megaavr/extras/WazamonoKunai.md) | AVR32DU20 | XIAO compatible / USB-C | 🔧 Req. PID / VID |
 
 >  
 > This core ships variants for **Tachi**, **Tsurugi**, and **Kunai**.  
